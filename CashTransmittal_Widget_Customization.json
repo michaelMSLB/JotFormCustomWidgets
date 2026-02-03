@@ -1,0 +1,68 @@
+{
+  "name": "Cash Transmittal Matrix Widget",
+  "description": "A dynamic table widget for collecting payment and loan information with auto-adding rows",
+  "author": "Mississippi Land Bank",
+  "version": "1.0.0",
+  "settings": [
+    {
+      "name": "labelBorrower",
+      "label": "Borrower Column Header",
+      "type": "text",
+      "defaultValue": "Borrower Name"
+    },
+    {
+      "name": "labelRemitter",
+      "label": "Remitter Column Header",
+      "type": "text",
+      "defaultValue": "Remitter Name (if different)"
+    },
+    {
+      "name": "labelPaymentType",
+      "label": "Payment Type Column Header",
+      "type": "text",
+      "defaultValue": "Cash or Check"
+    },
+    {
+      "name": "labelCheckCashAmount",
+      "label": "Check/Cash Amount Column Header",
+      "type": "text",
+      "defaultValue": "Total Check/Cash Amount"
+    },
+    {
+      "name": "labelEffectiveDate",
+      "label": "Effective Date Column Header",
+      "type": "text",
+      "defaultValue": "Effective Date"
+    },
+    {
+      "name": "labelLoanNumber",
+      "label": "Loan Number Column Header",
+      "type": "text",
+      "defaultValue": "Loan Number"
+    },
+    {
+      "name": "labelAmount",
+      "label": "Amount Column Header",
+      "type": "text",
+      "defaultValue": "Amount"
+    },
+    {
+      "name": "labelRemarks",
+      "label": "Remarks Column Header",
+      "type": "text",
+      "defaultValue": "Remarks/Comments/FH Code"
+    },
+    {
+      "name": "labelActions",
+      "label": "Actions Column Header",
+      "type": "text",
+      "defaultValue": "Actions"
+    },
+    {
+      "name": "paymentTypeOptions",
+      "label": "Payment Type Options (comma-separated)",
+      "type": "text",
+      "defaultValue": "Cash,Check,Money Order"
+    }
+  ]
+}
