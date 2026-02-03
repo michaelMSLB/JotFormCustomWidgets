@@ -28,6 +28,10 @@
       color: #666;
     }
 
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
     .matrix-table {
       width: 100%;
       border-collapse: collapse;
@@ -53,7 +57,7 @@
 
     .matrix-table th.required::after {
       content: ' *';
-      color: #e53935;
+      color: #b42318;
     }
 
     .matrix-table input,
@@ -76,35 +80,57 @@
     }
 
     .matrix-table input.invalid {
-      border-color: #e53935;
-      background: #fff5f5;
+      border-color: #b42318;
+      background-color: #fef3f2;
     }
 
     .matrix-table input.invalid:focus {
-      box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+      box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.15);
     }
 
-    .matrix-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
+    .actions-cell {
+      white-space: nowrap;
+      text-align: center;
     }
 
-    .matrix-actions button {
-      background: #6c757d;
+    .action-btn {
+      background: #2d6cdf;
       color: #fff;
       border: none;
-      padding: 8px 12px;
       border-radius: 4px;
+      padding: 5px 8px;
       cursor: pointer;
-      font-size: 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 11px;
+      margin: 2px;
+      transition: background-color 0.15s ease;
     }
 
-    .matrix-actions button:hover {
-      opacity: 0.9;
+    .action-btn:hover {
+      background: #1e5bc6;
+    }
+
+    .action-btn.copy-all {
+      background: #198754;
+    }
+
+    .action-btn.copy-all:hover {
+      background: #146c43;
+    }
+
+    .action-btn.copy-borrower {
+      background: #6f42c1;
+    }
+
+    .action-btn.copy-borrower:hover {
+      background: #59359a;
+    }
+
+    .action-btn.remove {
+      background: #dc3545;
+    }
+
+    .action-btn.remove:hover {
+      background: #b02a37;
     }
 
     .totals {
@@ -114,7 +140,7 @@
       font-weight: bold;
     }
 
-    .totals .total-field {
+    .total-field {
       background: #9acd32;
       color: #0d2a00;
       padding: 6px 12px;
@@ -123,81 +149,24 @@
       text-align: right;
     }
 
-    .row-actions {
-      display: flex;
-      gap: 4px;
-      flex-wrap: nowrap;
-    }
-
-    .row-actions button {
-      border: none;
-      border-radius: 4px;
-      padding: 6px 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
-    .row-actions button.copy-all {
-      background: #2d6cdf;
-      color: #fff;
-    }
-
-    .row-actions button.copy-borrower {
-      background: #17a2b8;
-      color: #fff;
-    }
-
-    .row-actions button.row-remove {
-      background: #e55353;
-      color: #fff;
-    }
-
-    .row-actions button:hover {
-      opacity: 0.85;
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
-    }
-
-    .icon {
-      width: 14px;
-      height: 14px;
-      display: inline-block;
-      vertical-align: middle;
-    }
-
-    .icon path {
-      fill: currentColor;
-    }
-
-    tr.optional-row {
+    .row-placeholder {
       opacity: 0.6;
-      transition: opacity 0.2s ease;
     }
 
-    tr.optional-row:focus-within,
-    tr.optional-row:hover {
-      opacity: 1;
+    .action-btn:focus {
+      outline: 2px solid #2d6cdf;
+      outline-offset: 2px;
+    }
+
+    .action-btn.remove:focus {
+      outline: none;
     }
   </style>
 </head>
 <body>
   <div id="main">
     <h3 class="widget-title" id="labelText">Dynamic Matrix</h3>
-    <div class="hint">Begin entering data and new rows will appear automatically. Borrower Name and Loan Number are required.</div>
-    <div class="matrix-actions">
-      <button type="button" id="clearRows">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 3h6l1 2h4a1 1 0 1 1 0 2h-1l-1.2 13.2A2 2 0 0 1 15.8 22H8.2a2 2 0 0 1-1.99-1.8L5 7H4a1 1 0 1 1 0-2h4l1-2zm0 6a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0v-8a1 1 0 0 0-1-1zm6 0a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0v-8a1 1 0 0 0-1-1z"></path>
-        </svg>
-        <span>Clear All</span>
-      </button>
-    </div>
+    <div class="hint">Rows are added automatically as you enter data. Borrower Name and Loan Number are required. Use copy buttons to duplicate info to a new row.</div>
     <div class="table-wrapper">
       <table class="matrix-table" aria-label="Dynamic matrix">
         <thead>
@@ -224,7 +193,6 @@
 
   <script type="text/javascript">
     var matrixBody = document.getElementById('matrixBody');
-    var clearRowsButton = document.getElementById('clearRows');
     var totalCheckCashEl = document.getElementById('totalCheckCash');
     var totalAmountEl = document.getElementById('totalAmount');
 
@@ -233,7 +201,7 @@
       if (Number.isNaN(numberValue)) {
         return '$0.00';
       }
-      return '$' + numberValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return '$' + numberValue.toFixed(2);
     }
 
     function createCellInput(type, name, placeholder, required) {
@@ -249,7 +217,7 @@
       }
       if (required) {
         input.required = true;
-        input.dataset.required = 'true';
+        input.setAttribute('data-required', 'true');
       }
       input.addEventListener('input', handleInputChange);
       input.addEventListener('blur', function() {
@@ -272,7 +240,7 @@
     }
 
     function validateField(input) {
-      if (input.dataset.required === 'true') {
+      if (input.getAttribute('data-required') === 'true') {
         var row = input.closest('tr');
         if (isRowFilled(row) && !input.value.trim()) {
           input.classList.add('invalid');
@@ -285,7 +253,7 @@
 
     function validateAllRows() {
       var valid = true;
-      var rows = matrixBody.querySelectorAll('tr:not(.optional-row)');
+      var rows = matrixBody.querySelectorAll('tr');
       rows.forEach(function(row) {
         if (isRowFilled(row)) {
           var requiredFields = row.querySelectorAll('[data-required="true"]');
@@ -293,6 +261,8 @@
             if (!field.value.trim()) {
               field.classList.add('invalid');
               valid = false;
+            } else {
+              field.classList.remove('invalid');
             }
           });
         }
@@ -300,115 +270,8 @@
       return valid;
     }
 
-    function createActionButtons(row) {
-      var container = document.createElement('div');
-      container.className = 'row-actions';
-
-      // Copy All (Borrower + Loan) button
-      var copyAllBtn = document.createElement('button');
-      copyAllBtn.type = 'button';
-      copyAllBtn.className = 'copy-all';
-      copyAllBtn.setAttribute('aria-label', 'Copy borrower and loan info to next row');
-      copyAllBtn.setAttribute('title', 'Copy Borrower + Loan');
-      copyAllBtn.tabIndex = -1;
-      copyAllBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> All';
-      copyAllBtn.addEventListener('click', function() {
-        copyToNextRow(row, true);
-      });
-      container.appendChild(copyAllBtn);
-
-      // Copy Borrower Only button
-      var copyBorrowerBtn = document.createElement('button');
-      copyBorrowerBtn.type = 'button';
-      copyBorrowerBtn.className = 'copy-borrower';
-      copyBorrowerBtn.setAttribute('aria-label', 'Copy borrower info only to next row');
-      copyBorrowerBtn.setAttribute('title', 'Copy Borrower Only');
-      copyBorrowerBtn.tabIndex = -1;
-      copyBorrowerBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Borrower';
-      copyBorrowerBtn.addEventListener('click', function() {
-        copyToNextRow(row, false);
-      });
-      container.appendChild(copyBorrowerBtn);
-
-      // Remove button
-      var removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'row-remove';
-      removeBtn.setAttribute('aria-label', 'Remove row');
-      removeBtn.setAttribute('title', 'Remove');
-      removeBtn.tabIndex = -1;
-      removeBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7zm3-4h6l1 2H8l1-2z"></path></svg>';
-      removeBtn.addEventListener('click', function() {
-        removeRow(row);
-      });
-      container.appendChild(removeBtn);
-
-      return container;
-    }
-
-    function copyToNextRow(sourceRow, includeLoan) {
-      var borrower = sourceRow.querySelector('[name="borrower"]').value;
-      var remitter = sourceRow.querySelector('[name="remitter"]').value;
-      var paymentType = sourceRow.querySelector('[name="paymentType"]').value;
-      var checkCashAmount = sourceRow.querySelector('[name="checkCashAmount"]').value;
-      var effectiveDate = sourceRow.querySelector('[name="effectiveDate"]').value;
-
-      var defaults = {
-        borrower: borrower,
-        remitter: remitter,
-        paymentType: paymentType,
-        checkCashAmount: checkCashAmount,
-        effectiveDate: effectiveDate
-      };
-
-      if (includeLoan) {
-        defaults.loanNumber = sourceRow.querySelector('[name="loanNumber"]').value;
-      }
-
-      // Find or create the next available row
-      var optionalRow = matrixBody.querySelector('tr.optional-row');
-      if (optionalRow) {
-        // Fill the optional row with defaults
-        Object.keys(defaults).forEach(function(key) {
-          var element = optionalRow.querySelector('[name="' + key + '"]');
-          if (element) {
-            element.value = defaults[key];
-          }
-        });
-        optionalRow.classList.remove('optional-row');
-        ensureOptionalRow();
-      } else {
-        addRow(defaults, false);
-      }
-
-      updateTotals();
-      notifyHeight();
-    }
-
-    function removeRow(row) {
-      var rows = matrixBody.querySelectorAll('tr');
-      if (rows.length <= 1) {
-        // Don't remove the last row, just clear it
-        row.querySelectorAll('input').forEach(function(input) {
-          input.value = '';
-          input.classList.remove('invalid');
-        });
-        row.querySelectorAll('select').forEach(function(select) {
-          select.selectedIndex = 0;
-        });
-      } else {
-        row.remove();
-        ensureOptionalRow();
-      }
-      updateTotals();
-      notifyHeight();
-    }
-
-    function addRow(defaults, isOptional) {
+    function addRow(defaults) {
       var row = document.createElement('tr');
-      if (isOptional) {
-        row.className = 'optional-row';
-      }
 
       var borrowerCell = document.createElement('td');
       borrowerCell.appendChild(createCellInput('text', 'borrower', 'Borrower Name', true));
@@ -443,9 +306,43 @@
       row.appendChild(remarksCell);
 
       var actionsCell = document.createElement('td');
-      actionsCell.appendChild(createActionButtons(row));
-      row.appendChild(actionsCell);
+      actionsCell.className = 'actions-cell';
 
+      // Copy All button (Borrower + Loan)
+      var copyAllBtn = document.createElement('button');
+      copyAllBtn.type = 'button';
+      copyAllBtn.className = 'action-btn copy-all';
+      copyAllBtn.title = 'Copy Borrower & Loan to new row';
+      copyAllBtn.textContent = 'Copy All';
+      copyAllBtn.addEventListener('click', function() {
+        copyToNewRow(row, true);
+      });
+      actionsCell.appendChild(copyAllBtn);
+
+      // Copy Borrower button
+      var copyBorrowerBtn = document.createElement('button');
+      copyBorrowerBtn.type = 'button';
+      copyBorrowerBtn.className = 'action-btn copy-borrower';
+      copyBorrowerBtn.title = 'Copy Borrower only to new row';
+      copyBorrowerBtn.textContent = 'Copy Borrower';
+      copyBorrowerBtn.addEventListener('click', function() {
+        copyToNewRow(row, false);
+      });
+      actionsCell.appendChild(copyBorrowerBtn);
+
+      // Remove button (mouse only, skip with tab)
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'action-btn remove';
+      removeBtn.title = 'Remove this row';
+      removeBtn.textContent = 'Remove';
+      removeBtn.setAttribute('tabindex', '-1');
+      removeBtn.addEventListener('click', function() {
+        removeRow(row);
+      });
+      actionsCell.appendChild(removeBtn);
+
+      row.appendChild(actionsCell);
       matrixBody.appendChild(row);
 
       if (defaults) {
@@ -462,11 +359,66 @@
       return row;
     }
 
-    function ensureOptionalRow() {
-      var optionalRow = matrixBody.querySelector('tr.optional-row');
-      if (!optionalRow) {
-        addRow(null, true);
+    function copyToNewRow(sourceRow, includeLoan) {
+      var defaults = {
+        borrower: sourceRow.querySelector('[name="borrower"]').value,
+        remitter: sourceRow.querySelector('[name="remitter"]').value,
+        paymentType: sourceRow.querySelector('[name="paymentType"]').value,
+        checkCashAmount: sourceRow.querySelector('[name="checkCashAmount"]').value,
+        effectiveDate: sourceRow.querySelector('[name="effectiveDate"]').value
+      };
+
+      if (includeLoan) {
+        defaults.loanNumber = sourceRow.querySelector('[name="loanNumber"]').value;
       }
+
+      // Find the last row
+      var rows = matrixBody.querySelectorAll('tr');
+      var lastRow = rows[rows.length - 1];
+
+      // If last row is empty, fill it; otherwise create new row
+      if (!isRowFilled(lastRow)) {
+        Object.keys(defaults).forEach(function(key) {
+          var element = lastRow.querySelector('[name="' + key + '"]');
+          if (element) {
+            element.value = defaults[key];
+          }
+        });
+        // Trigger change to ensure new blank row is added
+        handleInputChange({ target: lastRow.querySelector('[name="borrower"]') });
+        // Focus on loan number if not copied, or remarks if copied
+        if (includeLoan) {
+          lastRow.querySelector('[name="amount"]').focus();
+        } else {
+          lastRow.querySelector('[name="loanNumber"]').focus();
+        }
+      } else {
+        var newRow = addRow(defaults);
+        if (includeLoan) {
+          newRow.querySelector('[name="amount"]').focus();
+        } else {
+          newRow.querySelector('[name="loanNumber"]').focus();
+        }
+        ensureBlankRow();
+      }
+    }
+
+    function removeRow(row) {
+      var rows = matrixBody.querySelectorAll('tr');
+      if (rows.length <= 1) {
+        // Don't remove the last row, just clear it
+        row.querySelectorAll('input').forEach(function(input) {
+          input.value = '';
+          input.classList.remove('invalid');
+        });
+        row.querySelector('select').selectedIndex = 0;
+        updateTotals();
+        return;
+      }
+      row.remove();
+      updateTotals();
+      ensureBlankRow();
+      notifyHeight();
     }
 
     function updateTotals() {
@@ -475,10 +427,8 @@
       var totalAmount = 0;
 
       rows.forEach(function(row) {
-        var checkCashInput = row.querySelector('[name="checkCashAmount"]');
-        var amountInput = row.querySelector('[name="amount"]');
-        var checkCashValue = checkCashInput ? parseFloat(checkCashInput.value) || 0 : 0;
-        var amountValue = amountInput ? parseFloat(amountInput.value) || 0 : 0;
+        var checkCashValue = parseFloat(row.querySelector('[name="checkCashAmount"]').value) || 0;
+        var amountValue = parseFloat(row.querySelector('[name="amount"]').value) || 0;
         totalCheckCash += checkCashValue;
         totalAmount += amountValue;
       });
@@ -488,30 +438,36 @@
     }
 
     function handleInputChange(event) {
-      var targetRow = event.target.closest('tr');
-
-      // If this was an optional row and now has content, make it a regular row
-      if (targetRow && targetRow.classList.contains('optional-row') && isRowFilled(targetRow)) {
-        targetRow.classList.remove('optional-row');
-        ensureOptionalRow();
-      }
-
       updateTotals();
+      var targetRow = event.target.closest('tr');
+      if (targetRow) {
+        ensureBlankRow();
+      }
     }
 
     function isRowFilled(row) {
-      var inputs = row.querySelectorAll('input, select');
+      var inputs = row.querySelectorAll('input');
       return Array.prototype.some.call(inputs, function(input) {
-        if (input.tagName === 'SELECT') {
-          return false; // Don't count select as filled
-        }
         return input.value && input.value.toString().trim() !== '';
       });
     }
 
+    function ensureBlankRow() {
+      var rows = matrixBody.querySelectorAll('tr');
+      if (rows.length === 0) {
+        addRow();
+        return;
+      }
+      var lastRow = rows[rows.length - 1];
+      if (isRowFilled(lastRow)) {
+        addRow();
+      }
+    }
+
     function collectRows() {
       var rows = [];
-      matrixBody.querySelectorAll('tr:not(.optional-row)').forEach(function(row) {
+      matrixBody.querySelectorAll('tr').forEach(function(row) {
+        // Only collect rows that have data
         if (isRowFilled(row)) {
           rows.push({
             borrower: row.querySelector('[name="borrower"]').value,
@@ -530,8 +486,8 @@
 
     function buildSubmissionPayload() {
       var rows = collectRows();
-      var totalCheckCash = totalCheckCashEl.textContent.replace('$', '').replace(/,/g, '');
-      var totalAmount = totalAmountEl.textContent.replace('$', '').replace(/,/g, '');
+      var totalCheckCash = totalCheckCashEl.textContent.replace('$', '');
+      var totalAmount = totalAmountEl.textContent.replace('$', '');
 
       return {
         rows: rows,
@@ -543,48 +499,51 @@
     }
 
     function notifyHeight() {
-      if (typeof JFCustomWidget !== 'undefined') {
+      if (typeof JFCustomWidget !== 'undefined' && JFCustomWidget.requestFrameResize) {
         JFCustomWidget.requestFrameResize();
       }
     }
 
-    clearRowsButton.addEventListener('click', function() {
-      matrixBody.innerHTML = '';
-      addRow(null, false);
-      ensureOptionalRow();
-    });
+    // Initialize the widget
+    function initWidget() {
+      var label = null;
+      if (typeof JFCustomWidget !== 'undefined' && JFCustomWidget.getWidgetSetting) {
+        label = JFCustomWidget.getWidgetSetting('QuestionLabel');
+      }
+      if (label) {
+        document.getElementById('labelText').textContent = label;
+      }
 
-    // Initialize
+      // Add the first blank row
+      addRow();
+      notifyHeight();
+    }
+
+    // Handle JotForm widget ready event
     if (typeof JFCustomWidget !== 'undefined') {
       JFCustomWidget.subscribe('ready', function() {
-        var label = JFCustomWidget.getWidgetSetting('QuestionLabel');
-        if (label) {
-          document.getElementById('labelText').textContent = label;
-        }
-
-        addRow(null, false);
-        ensureOptionalRow();
-        notifyHeight();
+        initWidget();
 
         JFCustomWidget.subscribe('submit', function() {
           var isValid = validateAllRows();
-          var payload = buildSubmissionPayload();
-          var msg = {
-            valid: isValid,
-            value: JSON.stringify(payload)
-          };
-
           if (!isValid) {
-            msg.value = 'Please fill in all required fields (Borrower Name and Loan Number) for each row.';
+            JFCustomWidget.sendSubmit({
+              valid: false,
+              value: ''
+            });
+            return;
           }
 
-          JFCustomWidget.sendSubmit(msg);
+          var payload = buildSubmissionPayload();
+          JFCustomWidget.sendSubmit({
+            valid: true,
+            value: JSON.stringify(payload)
+          });
         });
       });
     } else {
       // Fallback for testing outside JotForm
-      addRow(null, false);
-      ensureOptionalRow();
+      document.addEventListener('DOMContentLoaded', initWidget);
     }
   </script>
 </body>
