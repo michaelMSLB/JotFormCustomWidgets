@@ -26,16 +26,26 @@
             .matrix-table {
                 width: 100%;
                 border-collapse: collapse;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
             }
 
             .matrix-table th,
             .matrix-table td {
+                border-bottom: 1px solid #e8edf4;
+                padding: 8px;
                 border: 1px solid #dcdcdc;
                 padding: 6px;
                 vertical-align: top;
             }
 
             .matrix-table th {
+                background: #f2f6fb;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #394150;
                 background: #f7f7f7;
                 font-size: 12px;
                 text-transform: uppercase;
@@ -46,6 +56,19 @@
             .matrix-table select {
                 width: 100%;
                 box-sizing: border-box;
+                padding: 8px 10px;
+                font-size: 13px;
+                border-radius: 6px;
+                border: 1px solid #d7deea;
+                background: #fff;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+
+            .matrix-table input:focus,
+            .matrix-table select:focus {
+                outline: none;
+                border-color: #2d6cdf;
+                box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.15);
                 padding: 6px 8px;
                 font-size: 13px;
             }
@@ -61,6 +84,13 @@
                 color: #fff;
                 border: none;
                 padding: 8px 12px;
+                border-radius: 999px;
+                cursor: pointer;
+                font-size: 13px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                box-shadow: 0 6px 12px rgba(45, 108, 223, 0.2);
                 border-radius: 4px;
                 cursor: pointer;
                 font-size: 13px;
@@ -78,6 +108,10 @@
             }
 
             .totals .total-field {
+                background: #e6f6c9;
+                color: #1f3b08;
+                padding: 8px 14px;
+                border-radius: 999px;
                 background: #9acd32;
                 color: #0d2a00;
                 padding: 6px 12px;
@@ -87,6 +121,17 @@
             }
 
             .row-remove {
+                background: #fce7e7;
+                color: #b42318;
+                border: 1px solid #f9c2c2;
+                border-radius: 8px;
+                padding: 6px 8px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
                 background: #e55353;
                 color: #fff;
                 border: none;
@@ -97,6 +142,26 @@
 
             .hint {
                 font-size: 12px;
+                color: #667085;
+            }
+
+            .icon {
+                width: 16px;
+                height: 16px;
+                display: inline-block;
+            }
+
+            .icon path {
+                fill: currentColor;
+            }
+
+            .action-label {
+                font-weight: 600;
+                letter-spacing: 0.02em;
+            }
+
+            .table-wrapper {
+                overflow-x: auto;
                 color: #666;
             }
         </style>
@@ -106,6 +171,18 @@
             <h3 class="widget-title" id="labelText">Dynamic Matrix</h3>
             <div class="hint">Add as many rows as needed. Money totals update automatically.</div>
             <div class="matrix-actions">
+                <button type="button" id="addRow">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 5c.55 0 1 .45 1 1v5h5a1 1 0 0 1 0 2h-5v5a1 1 0 1 1-2 0v-5H6a1 1 0 1 1 0-2h5V6c0-.55.45-1 1-1z"></path>
+                    </svg>
+                    <span class="action-label">Add Line</span>
+                </button>
+                <button type="button" id="clearRows" class="secondary">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 3h6l1 2h4a1 1 0 1 1 0 2h-1l-1.2 13.2A2 2 0 0 1 15.8 22H8.2a2 2 0 0 1-1.99-1.8L5 7H4a1 1 0 1 1 0-2h4l1-2zm0 6a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0v-8a1 1 0 0 0-1-1zm6 0a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0v-8a1 1 0 0 0-1-1z"></path>
+                    </svg>
+                    <span class="action-label">Clear</span>
+                </button>
                 <button type="button" id="addRow">Add Line</button>
                 <button type="button" id="clearRows" class="secondary">Clear</button>
             </div>
@@ -138,6 +215,7 @@
             var clearRowsButton = document.getElementById('clearRows');
             var totalCheckCashEl = document.getElementById('totalCheckCash');
             var totalAmountEl = document.getElementById('totalAmount');
+            var lastTabTime = 0;
 
             function formatCurrency(value) {
                 var numberValue = Number(value);
@@ -207,6 +285,28 @@
                 row.appendChild(amountCell);
 
                 var remarksCell = document.createElement('td');
+                var remarksInput = createCellInput('text', 'remarks', 'Remarks');
+                remarksInput.addEventListener('keydown', function(event) {
+                    if (event.key !== 'Tab') {
+                        return;
+                    }
+                    var now = Date.now();
+                    var isDoubleTab = now - lastTabTime < 400;
+                    lastTabTime = now;
+                    event.preventDefault();
+                    var newRowDefaults = {
+                        borrower: row.querySelector('[name="borrower"]').value
+                    };
+                    if (!isDoubleTab) {
+                        newRowDefaults.loanNumber = row.querySelector('[name="loanNumber"]').value;
+                    }
+                    var newRow = addRow(newRowDefaults);
+                    var focusTarget = newRow.querySelector('[name="remarks"]');
+                    if (focusTarget) {
+                        focusTarget.focus();
+                    }
+                });
+                remarksCell.appendChild(remarksInput);
                 remarksCell.appendChild(createCellInput('text', 'remarks', 'Remarks'));
                 row.appendChild(remarksCell);
 
@@ -214,6 +314,12 @@
                 var removeButton = document.createElement('button');
                 removeButton.type = 'button';
                 removeButton.className = 'row-remove';
+                removeButton.setAttribute('aria-label', 'Remove row');
+                removeButton.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7zm3-4h6l1 2H8l1-2z"></path></svg>';
+                removeButton.addEventListener('click', function() {
+                    row.remove();
+                    updateTotals();
+                    ensureEmptyRow();
                 removeButton.textContent = 'Remove';
                 removeButton.addEventListener('click', function() {
                     row.remove();
@@ -235,6 +341,11 @@
                 }
 
                 updateTotals();
+                if (isRowFilled(row) && isLastRow(row)) {
+                    addRow();
+                }
+                notifyHeight();
+                return row;
                 notifyHeight();
             }
 
@@ -254,6 +365,36 @@
                 totalAmountEl.textContent = formatCurrency(totalAmount);
             }
 
+            function handleInputChange(event) {
+                updateTotals();
+                var targetRow = event.target.closest('tr');
+                if (targetRow && isRowFilled(targetRow) && isLastRow(targetRow)) {
+                    addRow();
+                }
+            }
+
+            function isRowFilled(row) {
+                var inputs = row.querySelectorAll('input, select');
+                return Array.prototype.some.call(inputs, function(input) {
+                    return input.value && input.value.toString().trim() !== '';
+                });
+            }
+
+            function isLastRow(row) {
+                var rows = matrixBody.querySelectorAll('tr');
+                return rows.length && rows[rows.length - 1] === row;
+            }
+
+            function ensureEmptyRow() {
+                var rows = matrixBody.querySelectorAll('tr');
+                if (!rows.length) {
+                    addRow();
+                    return;
+                }
+                var lastRow = rows[rows.length - 1];
+                if (isRowFilled(lastRow)) {
+                    addRow();
+                }
             function handleInputChange() {
                 updateTotals();
             }
