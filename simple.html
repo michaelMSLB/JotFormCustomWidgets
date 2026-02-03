@@ -55,11 +55,6 @@
       color: #394150;
     }
 
-    .matrix-table th.required::after {
-      content: ' *';
-      color: #b42318;
-    }
-
     .matrix-table input,
     .matrix-table select {
       width: 100%;
@@ -79,58 +74,42 @@
       box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.15);
     }
 
-    .matrix-table input.invalid {
-      border-color: #b42318;
-      background-color: #fef3f2;
+    .matrix-table input.required-field {
+      border-left: 3px solid #2d6cdf;
     }
 
-    .matrix-table input.invalid:focus {
-      box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.15);
+    .matrix-table input.invalid {
+      border-color: #e53535;
+      border-left: 3px solid #e53535;
     }
 
     .actions-cell {
       white-space: nowrap;
-      text-align: center;
     }
 
-    .action-btn {
-      background: #2d6cdf;
-      color: #fff;
+    .row-action {
+      padding: 5px 8px;
+      margin: 2px;
       border: none;
       border-radius: 4px;
-      padding: 5px 8px;
       cursor: pointer;
       font-size: 11px;
-      margin: 2px;
-      transition: background-color 0.15s ease;
+      font-weight: 600;
     }
 
-    .action-btn:hover {
-      background: #1e5bc6;
+    .row-action.copy-all {
+      background: #2d6cdf;
+      color: #fff;
     }
 
-    .action-btn.copy-all {
-      background: #198754;
+    .row-action.copy-borrower {
+      background: #17a2b8;
+      color: #fff;
     }
 
-    .action-btn.copy-all:hover {
-      background: #146c43;
-    }
-
-    .action-btn.copy-borrower {
-      background: #6f42c1;
-    }
-
-    .action-btn.copy-borrower:hover {
-      background: #59359a;
-    }
-
-    .action-btn.remove {
-      background: #dc3545;
-    }
-
-    .action-btn.remove:hover {
-      background: #b02a37;
+    .row-action.remove {
+      background: #e55353;
+      color: #fff;
     }
 
     .totals {
@@ -148,35 +127,22 @@
       min-width: 140px;
       text-align: right;
     }
-
-    .row-placeholder {
-      opacity: 0.6;
-    }
-
-    .action-btn:focus {
-      outline: 2px solid #2d6cdf;
-      outline-offset: 2px;
-    }
-
-    .action-btn.remove:focus {
-      outline: none;
-    }
   </style>
 </head>
 <body>
   <div id="main">
     <h3 class="widget-title" id="labelText">Dynamic Matrix</h3>
-    <div class="hint">Rows are added automatically as you enter data. Borrower Name and Loan Number are required. Use copy buttons to duplicate info to a new row.</div>
+    <div class="hint">Borrower Name and Loan Number are required. New rows are added automatically as you enter data.</div>
     <div class="table-wrapper">
       <table class="matrix-table" aria-label="Dynamic matrix">
         <thead>
           <tr>
-            <th class="required">Borrower Name</th>
+            <th>Borrower Name *</th>
             <th>Remitter Name (if different)</th>
             <th>Cash or Check</th>
             <th>Total Check/Cash Amount</th>
             <th>Effective Date</th>
-            <th class="required">Loan Number</th>
+            <th>Loan Number *</th>
             <th>Amount</th>
             <th>Remarks/Comments/FH Code</th>
             <th>Actions</th>
@@ -195,16 +161,17 @@
     var matrixBody = document.getElementById('matrixBody');
     var totalCheckCashEl = document.getElementById('totalCheckCash');
     var totalAmountEl = document.getElementById('totalAmount');
+    var initialized = false;
 
     function formatCurrency(value) {
       var numberValue = Number(value);
       if (Number.isNaN(numberValue)) {
         return '$0.00';
       }
-      return '$' + numberValue.toFixed(2);
+      return '$' + numberValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
-    function createCellInput(type, name, placeholder, required) {
+    function createCellInput(type, name, placeholder, isRequired) {
       var input = document.createElement('input');
       input.type = type;
       input.name = name;
@@ -215,14 +182,11 @@
         input.step = '0.01';
         input.min = '0';
       }
-      if (required) {
-        input.required = true;
+      if (isRequired) {
+        input.classList.add('required-field');
         input.setAttribute('data-required', 'true');
       }
       input.addEventListener('input', handleInputChange);
-      input.addEventListener('blur', function() {
-        validateField(input);
-      });
       return input;
     }
 
@@ -239,112 +203,108 @@
       return select;
     }
 
-    function validateField(input) {
-      if (input.getAttribute('data-required') === 'true') {
-        var row = input.closest('tr');
-        if (isRowFilled(row) && !input.value.trim()) {
-          input.classList.add('invalid');
-          return false;
-        }
-      }
-      input.classList.remove('invalid');
-      return true;
-    }
-
-    function validateAllRows() {
-      var valid = true;
-      var rows = matrixBody.querySelectorAll('tr');
-      rows.forEach(function(row) {
-        if (isRowFilled(row)) {
-          var requiredFields = row.querySelectorAll('[data-required="true"]');
-          requiredFields.forEach(function(field) {
-            if (!field.value.trim()) {
-              field.classList.add('invalid');
-              valid = false;
-            } else {
-              field.classList.remove('invalid');
-            }
-          });
-        }
-      });
-      return valid;
+    function createActionButton(text, className, onClick) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'row-action ' + className;
+      button.textContent = text;
+      button.setAttribute('tabindex', '-1');
+      button.addEventListener('click', onClick);
+      return button;
     }
 
     function addRow(defaults) {
       var row = document.createElement('tr');
 
+      // Borrower Name (required)
       var borrowerCell = document.createElement('td');
       borrowerCell.appendChild(createCellInput('text', 'borrower', 'Borrower Name', true));
       row.appendChild(borrowerCell);
 
+      // Remitter Name
       var remitterCell = document.createElement('td');
-      remitterCell.appendChild(createCellInput('text', 'remitter', 'Remitter Name'));
+      remitterCell.appendChild(createCellInput('text', 'remitter', 'Remitter Name', false));
       row.appendChild(remitterCell);
 
+      // Payment Type
       var cashCheckCell = document.createElement('td');
       cashCheckCell.appendChild(createSelect('paymentType', ['Cash', 'Check', 'Money Order']));
       row.appendChild(cashCheckCell);
 
+      // Total Check/Cash Amount
       var totalCell = document.createElement('td');
-      totalCell.appendChild(createCellInput('number', 'checkCashAmount', '0.00'));
+      totalCell.appendChild(createCellInput('number', 'checkCashAmount', '0.00', false));
       row.appendChild(totalCell);
 
+      // Effective Date
       var dateCell = document.createElement('td');
-      dateCell.appendChild(createCellInput('date', 'effectiveDate'));
+      dateCell.appendChild(createCellInput('date', 'effectiveDate', '', false));
       row.appendChild(dateCell);
 
+      // Loan Number (required)
       var loanCell = document.createElement('td');
       loanCell.appendChild(createCellInput('text', 'loanNumber', 'Loan Number', true));
       row.appendChild(loanCell);
 
+      // Amount
       var amountCell = document.createElement('td');
-      amountCell.appendChild(createCellInput('number', 'amount', '0.00'));
+      amountCell.appendChild(createCellInput('number', 'amount', '0.00', false));
       row.appendChild(amountCell);
 
+      // Remarks
       var remarksCell = document.createElement('td');
-      remarksCell.appendChild(createCellInput('text', 'remarks', 'Remarks'));
+      remarksCell.appendChild(createCellInput('text', 'remarks', 'Remarks', false));
       row.appendChild(remarksCell);
 
+      // Actions Cell
       var actionsCell = document.createElement('td');
       actionsCell.className = 'actions-cell';
 
-      // Copy All button (Borrower + Loan)
-      var copyAllBtn = document.createElement('button');
-      copyAllBtn.type = 'button';
-      copyAllBtn.className = 'action-btn copy-all';
-      copyAllBtn.title = 'Copy Borrower & Loan to new row';
-      copyAllBtn.textContent = 'Copy All';
-      copyAllBtn.addEventListener('click', function() {
-        copyToNewRow(row, true);
-      });
-      actionsCell.appendChild(copyAllBtn);
+      // Copy Borrower + Loan button
+      actionsCell.appendChild(createActionButton('Copy All', 'copy-all', function() {
+        var borrowerValue = row.querySelector('[name="borrower"]').value;
+        var remitterValue = row.querySelector('[name="remitter"]').value;
+        var paymentTypeValue = row.querySelector('[name="paymentType"]').value;
+        var checkCashAmountValue = row.querySelector('[name="checkCashAmount"]').value;
+        var effectiveDateValue = row.querySelector('[name="effectiveDate"]').value;
+        var loanNumberValue = row.querySelector('[name="loanNumber"]').value;
 
-      // Copy Borrower button
-      var copyBorrowerBtn = document.createElement('button');
-      copyBorrowerBtn.type = 'button';
-      copyBorrowerBtn.className = 'action-btn copy-borrower';
-      copyBorrowerBtn.title = 'Copy Borrower only to new row';
-      copyBorrowerBtn.textContent = 'Copy Borrower';
-      copyBorrowerBtn.addEventListener('click', function() {
-        copyToNewRow(row, false);
-      });
-      actionsCell.appendChild(copyBorrowerBtn);
+        copyToNextRow({
+          borrower: borrowerValue,
+          remitter: remitterValue,
+          paymentType: paymentTypeValue,
+          checkCashAmount: checkCashAmountValue,
+          effectiveDate: effectiveDateValue,
+          loanNumber: loanNumberValue
+        });
+      }));
 
-      // Remove button (mouse only, skip with tab)
-      var removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'action-btn remove';
-      removeBtn.title = 'Remove this row';
-      removeBtn.textContent = 'Remove';
-      removeBtn.setAttribute('tabindex', '-1');
-      removeBtn.addEventListener('click', function() {
-        removeRow(row);
-      });
-      actionsCell.appendChild(removeBtn);
+      // Copy Borrower Only button
+      actionsCell.appendChild(createActionButton('Copy Borrower', 'copy-borrower', function() {
+        var borrowerValue = row.querySelector('[name="borrower"]').value;
+        var remitterValue = row.querySelector('[name="remitter"]').value;
+
+        copyToNextRow({
+          borrower: borrowerValue,
+          remitter: remitterValue
+        });
+      }));
+
+      // Remove button
+      actionsCell.appendChild(createActionButton('Remove', 'remove', function() {
+        var rows = matrixBody.querySelectorAll('tr');
+        if (rows.length > 1) {
+          row.remove();
+          updateTotals();
+          ensureBlankRow();
+          notifyHeight();
+        }
+      }));
 
       row.appendChild(actionsCell);
       matrixBody.appendChild(row);
 
+      // Apply defaults if provided
       if (defaults) {
         Object.keys(defaults).forEach(function(key) {
           var element = row.querySelector('[name="' + key + '"]');
@@ -359,66 +319,33 @@
       return row;
     }
 
-    function copyToNewRow(sourceRow, includeLoan) {
-      var defaults = {
-        borrower: sourceRow.querySelector('[name="borrower"]').value,
-        remitter: sourceRow.querySelector('[name="remitter"]').value,
-        paymentType: sourceRow.querySelector('[name="paymentType"]').value,
-        checkCashAmount: sourceRow.querySelector('[name="checkCashAmount"]').value,
-        effectiveDate: sourceRow.querySelector('[name="effectiveDate"]').value
-      };
-
-      if (includeLoan) {
-        defaults.loanNumber = sourceRow.querySelector('[name="loanNumber"]').value;
-      }
-
+    function copyToNextRow(data) {
       // Find the last row
       var rows = matrixBody.querySelectorAll('tr');
       var lastRow = rows[rows.length - 1];
 
-      // If last row is empty, fill it; otherwise create new row
-      if (!isRowFilled(lastRow)) {
-        Object.keys(defaults).forEach(function(key) {
+      // If last row is blank, use it; otherwise create new row
+      if (isRowBlank(lastRow)) {
+        Object.keys(data).forEach(function(key) {
           var element = lastRow.querySelector('[name="' + key + '"]');
           if (element) {
-            element.value = defaults[key];
+            element.value = data[key];
           }
         });
-        // Trigger change to ensure new blank row is added
-        handleInputChange({ target: lastRow.querySelector('[name="borrower"]') });
-        // Focus on loan number if not copied, or remarks if copied
-        if (includeLoan) {
-          lastRow.querySelector('[name="amount"]').focus();
-        } else {
-          lastRow.querySelector('[name="loanNumber"]').focus();
-        }
+        // Trigger input change to ensure new blank row is added
+        handleInputChange({ target: lastRow.querySelector('input') });
       } else {
-        var newRow = addRow(defaults);
-        if (includeLoan) {
-          newRow.querySelector('[name="amount"]').focus();
-        } else {
-          newRow.querySelector('[name="loanNumber"]').focus();
-        }
+        addRow(data);
         ensureBlankRow();
       }
-    }
 
-    function removeRow(row) {
-      var rows = matrixBody.querySelectorAll('tr');
-      if (rows.length <= 1) {
-        // Don't remove the last row, just clear it
-        row.querySelectorAll('input').forEach(function(input) {
-          input.value = '';
-          input.classList.remove('invalid');
-        });
-        row.querySelector('select').selectedIndex = 0;
-        updateTotals();
-        return;
+      // Focus on the amount field of the row we just populated
+      var targetRow = matrixBody.querySelectorAll('tr');
+      var populatedRow = targetRow[targetRow.length - 2] || targetRow[targetRow.length - 1];
+      var amountField = populatedRow.querySelector('[name="amount"]');
+      if (amountField) {
+        amountField.focus();
       }
-      row.remove();
-      updateTotals();
-      ensureBlankRow();
-      notifyHeight();
     }
 
     function updateTotals() {
@@ -439,55 +366,95 @@
 
     function handleInputChange(event) {
       updateTotals();
-      var targetRow = event.target.closest('tr');
-      if (targetRow) {
-        ensureBlankRow();
+      ensureBlankRow();
+    }
+
+    function isRowBlank(row) {
+      var inputs = row.querySelectorAll('input');
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value && inputs[i].value.toString().trim() !== '') {
+          return false;
+        }
       }
+      return true;
     }
 
     function isRowFilled(row) {
-      var inputs = row.querySelectorAll('input');
-      return Array.prototype.some.call(inputs, function(input) {
-        return input.value && input.value.toString().trim() !== '';
-      });
+      return !isRowBlank(row);
     }
 
     function ensureBlankRow() {
       var rows = matrixBody.querySelectorAll('tr');
       if (rows.length === 0) {
         addRow();
+        addRow();
         return;
       }
+
       var lastRow = rows[rows.length - 1];
       if (isRowFilled(lastRow)) {
         addRow();
       }
     }
 
-    function collectRows() {
-      var rows = [];
-      matrixBody.querySelectorAll('tr').forEach(function(row) {
-        // Only collect rows that have data
-        if (isRowFilled(row)) {
-          rows.push({
-            borrower: row.querySelector('[name="borrower"]').value,
-            remitter: row.querySelector('[name="remitter"]').value,
-            paymentType: row.querySelector('[name="paymentType"]').value,
-            checkCashAmount: row.querySelector('[name="checkCashAmount"]').value,
-            effectiveDate: row.querySelector('[name="effectiveDate"]').value,
-            loanNumber: row.querySelector('[name="loanNumber"]').value,
-            amount: row.querySelector('[name="amount"]').value,
-            remarks: row.querySelector('[name="remarks"]').value
-          });
+    function validateRows() {
+      var rows = matrixBody.querySelectorAll('tr');
+      var valid = true;
+
+      rows.forEach(function(row, index) {
+        // Skip validation for the last blank row
+        if (index === rows.length - 1 && isRowBlank(row)) {
+          return;
+        }
+
+        var borrower = row.querySelector('[name="borrower"]');
+        var loanNumber = row.querySelector('[name="loanNumber"]');
+
+        if (!borrower.value.trim()) {
+          borrower.classList.add('invalid');
+          valid = false;
+        } else {
+          borrower.classList.remove('invalid');
+        }
+
+        if (!loanNumber.value.trim()) {
+          loanNumber.classList.add('invalid');
+          valid = false;
+        } else {
+          loanNumber.classList.remove('invalid');
         }
       });
+
+      return valid;
+    }
+
+    function collectRows() {
+      var rows = [];
+      matrixBody.querySelectorAll('tr').forEach(function(row, index) {
+        // Skip blank rows
+        if (isRowBlank(row)) {
+          return;
+        }
+
+        rows.push({
+          borrower: row.querySelector('[name="borrower"]').value,
+          remitter: row.querySelector('[name="remitter"]').value,
+          paymentType: row.querySelector('[name="paymentType"]').value,
+          checkCashAmount: row.querySelector('[name="checkCashAmount"]').value,
+          effectiveDate: row.querySelector('[name="effectiveDate"]').value,
+          loanNumber: row.querySelector('[name="loanNumber"]').value,
+          amount: row.querySelector('[name="amount"]').value,
+          remarks: row.querySelector('[name="remarks"]').value
+        });
+      });
+
       return rows;
     }
 
     function buildSubmissionPayload() {
       var rows = collectRows();
-      var totalCheckCash = totalCheckCashEl.textContent.replace('$', '');
-      var totalAmount = totalAmountEl.textContent.replace('$', '');
+      var totalCheckCash = totalCheckCashEl.textContent.replace('$', '').replace(',', '');
+      var totalAmount = totalAmountEl.textContent.replace('$', '').replace(',', '');
 
       return {
         rows: rows,
@@ -504,46 +471,52 @@
       }
     }
 
-    // Initialize the widget
-    function initWidget() {
-      var label = null;
-      if (typeof JFCustomWidget !== 'undefined' && JFCustomWidget.getWidgetSetting) {
-        label = JFCustomWidget.getWidgetSetting('QuestionLabel');
-      }
-      if (label) {
-        document.getElementById('labelText').textContent = label;
-      }
+    function initializeWidget() {
+      if (initialized) return;
+      initialized = true;
 
-      // Add the first blank row
+      // Add first working row
+      addRow();
+      // Add second blank/optional row
       addRow();
       notifyHeight();
     }
 
-    // Handle JotForm widget ready event
-    if (typeof JFCustomWidget !== 'undefined') {
-      JFCustomWidget.subscribe('ready', function() {
-        initWidget();
-
-        JFCustomWidget.subscribe('submit', function() {
-          var isValid = validateAllRows();
-          if (!isValid) {
-            JFCustomWidget.sendSubmit({
-              valid: false,
-              value: ''
-            });
-            return;
-          }
-
-          var payload = buildSubmissionPayload();
-          JFCustomWidget.sendSubmit({
-            valid: true,
-            value: JSON.stringify(payload)
-          });
-        });
+    // Initialize on DOM ready as fallback
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initializeWidget, 100);
       });
     } else {
-      // Fallback for testing outside JotForm
-      document.addEventListener('DOMContentLoaded', initWidget);
+      setTimeout(initializeWidget, 100);
+    }
+
+    // JotForm widget initialization
+    if (typeof JFCustomWidget !== 'undefined') {
+      JFCustomWidget.subscribe('ready', function() {
+        var label = JFCustomWidget.getWidgetSetting('QuestionLabel');
+        if (label) {
+          document.getElementById('labelText').textContent = label;
+        }
+
+        initializeWidget();
+
+        JFCustomWidget.subscribe('submit', function() {
+          var isValid = validateRows();
+          var payload = buildSubmissionPayload();
+
+          var msg = {
+            valid: isValid,
+            value: JSON.stringify(payload)
+          };
+
+          if (!isValid) {
+            msg.value = 'Please fill in all required fields (Borrower Name and Loan Number) for each row.';
+          }
+
+          JFCustomWidget.sendSubmit(msg);
+        });
+      });
     }
   </script>
 </body>
