@@ -35,6 +35,8 @@
             .matrix-table td {
                 border-bottom: 1px solid #e8edf4;
                 padding: 8px;
+                border: 1px solid #dcdcdc;
+                padding: 6px;
                 vertical-align: top;
             }
 
@@ -44,6 +46,10 @@
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
                 color: #394150;
+                background: #f7f7f7;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.02em;
             }
 
             .matrix-table input,
@@ -63,6 +69,8 @@
                 outline: none;
                 border-color: #2d6cdf;
                 box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.15);
+                padding: 6px 8px;
+                font-size: 13px;
             }
 
             .matrix-actions {
@@ -83,6 +91,9 @@
                 align-items: center;
                 gap: 6px;
                 box-shadow: 0 6px 12px rgba(45, 108, 223, 0.2);
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 13px;
             }
 
             .matrix-actions button.secondary {
@@ -101,6 +112,10 @@
                 color: #1f3b08;
                 padding: 8px 14px;
                 border-radius: 999px;
+                background: #9acd32;
+                color: #0d2a00;
+                padding: 6px 12px;
+                border-radius: 4px;
                 min-width: 140px;
                 text-align: right;
             }
@@ -117,6 +132,12 @@
                 justify-content: center;
                 width: 32px;
                 height: 32px;
+                background: #e55353;
+                color: #fff;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 10px;
+                cursor: pointer;
             }
 
             .hint {
@@ -141,6 +162,7 @@
 
             .table-wrapper {
                 overflow-x: auto;
+                color: #666;
             }
         </style>
     </head>
@@ -161,6 +183,8 @@
                     </svg>
                     <span class="action-label">Clear</span>
                 </button>
+                <button type="button" id="addRow">Add Line</button>
+                <button type="button" id="clearRows" class="secondary">Clear</button>
             </div>
             <div class="table-wrapper">
                 <table class="matrix-table" aria-label="Dynamic matrix">
@@ -283,6 +307,7 @@
                     }
                 });
                 remarksCell.appendChild(remarksInput);
+                remarksCell.appendChild(createCellInput('text', 'remarks', 'Remarks'));
                 row.appendChild(remarksCell);
 
                 var removeCell = document.createElement('td');
@@ -295,6 +320,10 @@
                     row.remove();
                     updateTotals();
                     ensureEmptyRow();
+                removeButton.textContent = 'Remove';
+                removeButton.addEventListener('click', function() {
+                    row.remove();
+                    updateTotals();
                     notifyHeight();
                 });
                 removeCell.appendChild(removeButton);
@@ -317,6 +346,7 @@
                 }
                 notifyHeight();
                 return row;
+                notifyHeight();
             }
 
             function updateTotals() {
@@ -365,6 +395,8 @@
                 if (isRowFilled(lastRow)) {
                     addRow();
                 }
+            function handleInputChange() {
+                updateTotals();
             }
 
             function collectRows() {
