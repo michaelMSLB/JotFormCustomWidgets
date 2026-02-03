@@ -1,29 +1,434 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta charset="utf-8">
+        <title>Dynamic Matrix Widget</title>
         <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                margin: 0;
+                padding: 16px;
+                color: #1a1a1a;
+            }
+
+            #main {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .widget-title {
+                margin: 0;
+                font-size: 18px;
+            }
+
+            .matrix-table {
+                width: 100%;
+                border-collapse: collapse;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            }
+
+            .matrix-table th,
+            .matrix-table td {
+                border-bottom: 1px solid #e8edf4;
+                padding: 8px;
+                vertical-align: top;
+            }
+
+            .matrix-table th {
+                background: #f2f6fb;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #394150;
+            }
+
+            .matrix-table input,
+            .matrix-table select {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 8px 10px;
+                font-size: 13px;
+                border-radius: 6px;
+                border: 1px solid #d7deea;
+                background: #fff;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+
+            .matrix-table input:focus,
+            .matrix-table select:focus {
+                outline: none;
+                border-color: #2d6cdf;
+                box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.15);
+            }
+
+            .matrix-actions {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .matrix-actions button {
+                background: #2d6cdf;
+                color: #fff;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 999px;
+                cursor: pointer;
+                font-size: 13px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                box-shadow: 0 6px 12px rgba(45, 108, 223, 0.2);
+            }
+
+            .matrix-actions button.secondary {
+                background: #6c757d;
+            }
+
+            .totals {
+                display: flex;
+                justify-content: flex-end;
+                gap: 16px;
+                font-weight: bold;
+            }
+
+            .totals .total-field {
+                background: #e6f6c9;
+                color: #1f3b08;
+                padding: 8px 14px;
+                border-radius: 999px;
+                min-width: 140px;
+                text-align: right;
+            }
+
+            .row-remove {
+                background: #fce7e7;
+                color: #b42318;
+                border: 1px solid #f9c2c2;
+                border-radius: 8px;
+                padding: 6px 8px;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+            }
+
+            .hint {
+                font-size: 12px;
+                color: #667085;
+            }
+
+            .icon {
+                width: 16px;
+                height: 16px;
+                display: inline-block;
+            }
+
+            .icon path {
+                fill: currentColor;
+            }
+
+            .action-label {
+                font-weight: 600;
+                letter-spacing: 0.02em;
+            }
+
+            .table-wrapper {
+                overflow-x: auto;
+            }
+        </style>
     </head>
     <body>
         <div id="main">
-            <h3>This is my first widget.</h3>
-            <span id="labelText"></span>
-            <input type="text" id="userInput">
+            <h3 class="widget-title" id="labelText">Dynamic Matrix</h3>
+            <div class="hint">Add as many rows as needed. Money totals update automatically.</div>
+            <div class="matrix-actions">
+                <button type="button" id="addRow">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 5c.55 0 1 .45 1 1v5h5a1 1 0 0 1 0 2h-5v5a1 1 0 1 1-2 0v-5H6a1 1 0 1 1 0-2h5V6c0-.55.45-1 1-1z"></path>
+                    </svg>
+                    <span class="action-label">Add Line</span>
+                </button>
+                <button type="button" id="clearRows" class="secondary">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 3h6l1 2h4a1 1 0 1 1 0 2h-1l-1.2 13.2A2 2 0 0 1 15.8 22H8.2a2 2 0 0 1-1.99-1.8L5 7H4a1 1 0 1 1 0-2h4l1-2zm0 6a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0v-8a1 1 0 0 0-1-1zm6 0a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0v-8a1 1 0 0 0-1-1z"></path>
+                    </svg>
+                    <span class="action-label">Clear</span>
+                </button>
+            </div>
+            <div class="table-wrapper">
+                <table class="matrix-table" aria-label="Dynamic matrix">
+                    <thead>
+                        <tr>
+                            <th>Borrower Name</th>
+                            <th>Remitter Name (if different)</th>
+                            <th>Cash or Check</th>
+                            <th>Total Check/Cash Amount</th>
+                            <th>Effective Date</th>
+                            <th>Loan Number</th>
+                            <th>Amount</th>
+                            <th>Remarks/Comments/FH Code</th>
+                            <th>Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody"></tbody>
+                </table>
+            </div>
+            <div class="totals">
+                <div class="total-field">Total Check/Cash: <span id="totalCheckCash">$0.00</span></div>
+                <div class="total-field">Total Amount: <span id="totalAmount">$0.00</span></div>
+            </div>
         </div>
         <script type="text/javascript">
-            //always subscribe to ready event and implement widget related code
-            //inside callback function , it is the best practice while developing widgets
-            JFCustomWidget.subscribe("ready", function(){
-                var label = JFCustomWidget.getWidgetSetting('QuestionLabel');
-                document.getElementById('labelText').innerHTML = label;
-                //subscribe to form submit event
-                JFCustomWidget.subscribe("submit", function(){
-                    var msg = {
-                        //you should valid attribute to data for JotForm
-                        //to be able to use youw widget as required
-                        valid: true,
-                        value: document.getElementById('userInput').value
+            var matrixBody = document.getElementById('matrixBody');
+            var addRowButton = document.getElementById('addRow');
+            var clearRowsButton = document.getElementById('clearRows');
+            var totalCheckCashEl = document.getElementById('totalCheckCash');
+            var totalAmountEl = document.getElementById('totalAmount');
+            var lastTabTime = 0;
+
+            function formatCurrency(value) {
+                var numberValue = Number(value);
+                if (Number.isNaN(numberValue)) {
+                    return '$0.00';
+                }
+                return '$' + numberValue.toFixed(2);
+            }
+
+            function createCellInput(type, name, placeholder) {
+                var input = document.createElement('input');
+                input.type = type;
+                input.name = name;
+                if (placeholder) {
+                    input.placeholder = placeholder;
+                }
+                if (type === 'number') {
+                    input.step = '0.01';
+                    input.min = '0';
+                }
+                input.addEventListener('input', handleInputChange);
+                return input;
+            }
+
+            function createSelect(name, options) {
+                var select = document.createElement('select');
+                select.name = name;
+                options.forEach(function(optionValue) {
+                    var option = document.createElement('option');
+                    option.value = optionValue;
+                    option.textContent = optionValue;
+                    select.appendChild(option);
+                });
+                select.addEventListener('change', handleInputChange);
+                return select;
+            }
+
+            function addRow(defaults) {
+                var row = document.createElement('tr');
+
+                var borrowerCell = document.createElement('td');
+                borrowerCell.appendChild(createCellInput('text', 'borrower', 'Borrower Name'));
+                row.appendChild(borrowerCell);
+
+                var remitterCell = document.createElement('td');
+                remitterCell.appendChild(createCellInput('text', 'remitter', 'Remitter Name'));
+                row.appendChild(remitterCell);
+
+                var cashCheckCell = document.createElement('td');
+                cashCheckCell.appendChild(createSelect('paymentType', ['Cash', 'Check', 'Money Order']));
+                row.appendChild(cashCheckCell);
+
+                var totalCell = document.createElement('td');
+                totalCell.appendChild(createCellInput('number', 'checkCashAmount', '0.00'));
+                row.appendChild(totalCell);
+
+                var dateCell = document.createElement('td');
+                dateCell.appendChild(createCellInput('date', 'effectiveDate'));
+                row.appendChild(dateCell);
+
+                var loanCell = document.createElement('td');
+                loanCell.appendChild(createCellInput('text', 'loanNumber', 'Loan Number'));
+                row.appendChild(loanCell);
+
+                var amountCell = document.createElement('td');
+                amountCell.appendChild(createCellInput('number', 'amount', '0.00'));
+                row.appendChild(amountCell);
+
+                var remarksCell = document.createElement('td');
+                var remarksInput = createCellInput('text', 'remarks', 'Remarks');
+                remarksInput.addEventListener('keydown', function(event) {
+                    if (event.key !== 'Tab') {
+                        return;
                     }
-                    // send value to JotForm
+                    var now = Date.now();
+                    var isDoubleTab = now - lastTabTime < 400;
+                    lastTabTime = now;
+                    event.preventDefault();
+                    var newRowDefaults = {
+                        borrower: row.querySelector('[name="borrower"]').value
+                    };
+                    if (!isDoubleTab) {
+                        newRowDefaults.loanNumber = row.querySelector('[name="loanNumber"]').value;
+                    }
+                    var newRow = addRow(newRowDefaults);
+                    var focusTarget = newRow.querySelector('[name="remarks"]');
+                    if (focusTarget) {
+                        focusTarget.focus();
+                    }
+                });
+                remarksCell.appendChild(remarksInput);
+                row.appendChild(remarksCell);
+
+                var removeCell = document.createElement('td');
+                var removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'row-remove';
+                removeButton.setAttribute('aria-label', 'Remove row');
+                removeButton.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7zm3-4h6l1 2H8l1-2z"></path></svg>';
+                removeButton.addEventListener('click', function() {
+                    row.remove();
+                    updateTotals();
+                    ensureEmptyRow();
+                    notifyHeight();
+                });
+                removeCell.appendChild(removeButton);
+                row.appendChild(removeCell);
+
+                matrixBody.appendChild(row);
+
+                if (defaults) {
+                    Object.keys(defaults).forEach(function(key) {
+                        var element = row.querySelector('[name="' + key + '"]');
+                        if (element) {
+                            element.value = defaults[key];
+                        }
+                    });
+                }
+
+                updateTotals();
+                if (isRowFilled(row) && isLastRow(row)) {
+                    addRow();
+                }
+                notifyHeight();
+                return row;
+            }
+
+            function updateTotals() {
+                var rows = matrixBody.querySelectorAll('tr');
+                var totalCheckCash = 0;
+                var totalAmount = 0;
+
+                rows.forEach(function(row) {
+                    var checkCashValue = parseFloat(row.querySelector('[name="checkCashAmount"]').value) || 0;
+                    var amountValue = parseFloat(row.querySelector('[name="amount"]').value) || 0;
+                    totalCheckCash += checkCashValue;
+                    totalAmount += amountValue;
+                });
+
+                totalCheckCashEl.textContent = formatCurrency(totalCheckCash);
+                totalAmountEl.textContent = formatCurrency(totalAmount);
+            }
+
+            function handleInputChange(event) {
+                updateTotals();
+                var targetRow = event.target.closest('tr');
+                if (targetRow && isRowFilled(targetRow) && isLastRow(targetRow)) {
+                    addRow();
+                }
+            }
+
+            function isRowFilled(row) {
+                var inputs = row.querySelectorAll('input, select');
+                return Array.prototype.some.call(inputs, function(input) {
+                    return input.value && input.value.toString().trim() !== '';
+                });
+            }
+
+            function isLastRow(row) {
+                var rows = matrixBody.querySelectorAll('tr');
+                return rows.length && rows[rows.length - 1] === row;
+            }
+
+            function ensureEmptyRow() {
+                var rows = matrixBody.querySelectorAll('tr');
+                if (!rows.length) {
+                    addRow();
+                    return;
+                }
+                var lastRow = rows[rows.length - 1];
+                if (isRowFilled(lastRow)) {
+                    addRow();
+                }
+            }
+
+            function collectRows() {
+                var rows = [];
+                matrixBody.querySelectorAll('tr').forEach(function(row) {
+                    rows.push({
+                        borrower: row.querySelector('[name="borrower"]').value,
+                        remitter: row.querySelector('[name="remitter"]').value,
+                        paymentType: row.querySelector('[name="paymentType"]').value,
+                        checkCashAmount: row.querySelector('[name="checkCashAmount"]').value,
+                        effectiveDate: row.querySelector('[name="effectiveDate"]').value,
+                        loanNumber: row.querySelector('[name="loanNumber"]').value,
+                        amount: row.querySelector('[name="amount"]').value,
+                        remarks: row.querySelector('[name="remarks"]').value
+                    });
+                });
+
+                return rows;
+            }
+
+            function buildSubmissionPayload() {
+                var rows = collectRows();
+                var totalCheckCash = totalCheckCashEl.textContent.replace('$', '');
+                var totalAmount = totalAmountEl.textContent.replace('$', '');
+
+                return {
+                    rows: rows,
+                    totals: {
+                        totalCheckCash: totalCheckCash,
+                        totalAmount: totalAmount
+                    }
+                };
+            }
+
+            function notifyHeight() {
+                if (typeof JFCustomWidget !== 'undefined') {
+                    JFCustomWidget.requestFrameResize();
+                }
+            }
+
+            addRowButton.addEventListener('click', function() {
+                addRow();
+            });
+
+            clearRowsButton.addEventListener('click', function() {
+                matrixBody.innerHTML = '';
+                addRow();
+            });
+
+            JFCustomWidget.subscribe('ready', function() {
+                var label = JFCustomWidget.getWidgetSetting('QuestionLabel');
+                if (label) {
+                    document.getElementById('labelText').textContent = label;
+                }
+
+                addRow();
+                notifyHeight();
+
+                JFCustomWidget.subscribe('submit', function() {
+                    var payload = buildSubmissionPayload();
+                    var msg = {
+                        valid: true,
+                        value: JSON.stringify(payload)
+                    };
                     JFCustomWidget.sendSubmit(msg);
                 });
             });
