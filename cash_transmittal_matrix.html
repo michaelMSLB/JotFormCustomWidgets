@@ -1,4 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dynamic Matrix Widget</title>
+  <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 12px;
+      color: #1a1a1a;
+    }
 
+    #main {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 1200px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    .matrix-table th,
+    .matrix-table td {
+      border: 1px solid #dcdcdc;
+      padding: 5px;
+      vertical-align: middle;
+    }
+
+    .matrix-table th {
+      background: #4a5568;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #ffffff;
+    }
+
+    .matrix-table tbody tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+
+    .matrix-table tbody tr:nth-child(even) {
+      background-color: #f1f5f9;
+    }
+
+    .matrix-table input,
+    .matrix-table select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px 8px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: 1px solid #d7deea;
+      background: #fff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      autocomplete: off;
+    }
+
+    .matrix-table input:focus,
+    .matrix-table select:focus {
+      outline: none;
+      border-color: #2d6cdf;
+      box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.15);
+    }
+
+    .matrix-table input.invalid-loan {
+      background-color: #fff3e0;
+      border-color: #ff9800;
+    }
+
+    .matrix-table input[type="date"] {
+      min-width: 130px;
+    }
+
+    .totals {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      font-weight: bold;
+      flex-wrap: wrap;
+    }
+
+    .total-field {
+      background: #4a5568;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .action-btn {
+      border: none;
+      border-radius: 4px;
+      padding: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin: 2px;
+    }
+
+    .action-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .action-btn.copy-all {
+      background: #2d6cdf;
+      color: #fff;
+    }
+
+    .action-btn.copy-borrower {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .action-btn.remove {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .action-btn.remove:hover {
+      background: #dc2626;
+    }
+
+    .actions-cell {
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    /* Loan Allocation Styles */
+    .loan-allocations {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-start;
+    }
+
+    .loan-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .loan-row input[name="loanNumber"] {
+      width: 90px;
+      min-width: 90px;
+    }
+
+    .loan-row input[name="amount"] {
+      width: 80px;
+      min-width: 80px;
+    }
+
+    .loan-btn {
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      font-size: 14px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .loan-btn.add-loan {
+      background: #2d6cdf;
+      color: #fff;
+    }
+
+    .loan-btn.add-loan:hover {
+      background: #1d5bc0;
+    }
+
+    .loan-btn.remove-loan {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .loan-btn.remove-loan:hover {
+      background: #dc2626;
+    }
+
+    .loan-label {
+      font-size: 10px;
+      color: #666;
+      min-width: 45px;
+    }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <div class="table-wrapper">
+      <table class="matrix-table" aria-label="Payment matrix">
+        <thead>
+          <tr>
+            <th id="header-borrower">Borrower Name</th>
+            <th id="header-remitter">Remitter Name</th>
+            <th id="header-paymentType">Cash or Check</th>
+            <th id="header-checkCashAmount">Check/Cash Amount</th>
+            <th id="header-effectiveDate">Effective Date</th>
+            <th id="header-loanAmount">Loan # / Amount</th>
+            <th id="header-remarks">Remarks</th>
+            <th id="header-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+    </div>
+    <div class="totals">
+      <div class="total-field">Total Check/Cash: <span id="totalCheckCash">$0.00</span></div>
+      <div class="total-field">Total Allocated: <span id="totalAmount">$0.00</span></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var matrixBody = document.getElementById('matrixBody');
+    var totalCheckCashEl = document.getElementById('totalCheckCash');
+    var totalAmountEl = document.getElementById('totalAmount');
+    var initialized = false;
+
+    // Default settings
+    var settings = {
+      columnHeaders: {
+        borrower: 'Borrower Name',
+        remitter: 'Remitter Name',
+        paymentType: 'Cash or Check',
+        checkCashAmount: 'Check/Cash Amount',
         effectiveDate: 'Effective Date',
         loanAmount: 'Loan # / Amount',
         remarks: 'Remarks',
