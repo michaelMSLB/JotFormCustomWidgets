@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Dynamic Matrix Widget</title>
+  <title>Cash Transmittal Widget</title>
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <style>
     body {
@@ -47,11 +47,11 @@
     }
 
     .matrix-table tbody tr:nth-child(odd) {
-      background-color: #ffffff;
+      background-color: #f8fafc;
     }
 
     .matrix-table tbody tr:nth-child(even) {
-      background-color: #f7fafc;
+      background-color: #eef2f7;
     }
 
     .matrix-table input,
@@ -63,7 +63,6 @@
       border-radius: 4px;
       border: 1px solid #d7deea;
       background: #fff;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .matrix-table input:focus,
@@ -74,671 +73,743 @@
     }
 
     .matrix-table input.invalid-loan {
-      background-color: #fff3cd;
-      border-color: #ffc107;
+      background-color: #fff3e0;
+      border-color: #ff9800;
     }
 
     .matrix-table input.required-missing {
-      background-color: #fee2e2;
-      border-color: #ef4444;
+      background-color: #ffebee;
+      border-color: #f44336;
     }
 
-    .loan-allocations {
+    .loan-applied-container {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    .loan-row {
+    .loan-applied-row {
       display: flex;
       align-items: center;
       gap: 4px;
     }
 
-    .loan-row input {
+    .loan-applied-row input {
       width: auto;
     }
 
-    .loan-row input[name="loanNumber"] {
+    .loan-applied-row input[name="loanNumber"] {
       width: 90px;
     }
 
-    .loan-row input[name="amount"] {
+    .loan-applied-row input[name="loanAmount"] {
       width: 80px;
       text-align: right;
     }
 
-    .loan-add-btn {
-      background: #2d6cdf;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
+    .loan-applied-row input[name="loanComments"] {
+      width: 120px;
+      flex-grow: 1;
+    }
+
+    .loan-btn {
       width: 24px;
       height: 24px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .loan-add-btn:hover {
-      background: #1e5bc6;
-    }
-
-    .loan-remove-btn {
-      background: #e55353;
-      color: #fff;
-      border: none;
       border-radius: 4px;
-      width: 24px;
-      height: 24px;
-      font-size: 14px;
-      font-weight: bold;
+      border: none;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .loan-remove-btn:hover {
-      background: #dc2626;
-    }
-
-    .actions-cell {
       display: flex;
-      gap: 6px;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .loan-btn-add {
+      background: #4caf50;
+      color: white;
+    }
+
+    .loan-btn-add:hover {
+      background: #388e3c;
+    }
+
+    .loan-btn-remove {
+      background: #f44336;
+      color: white;
+    }
+
+    .loan-btn-remove:hover {
+      background: #d32f2f;
     }
 
     .action-btn {
-      background: #2d6cdf;
-      color: #fff;
-      border: none;
+      padding: 4px 8px;
       border-radius: 4px;
-      width: 32px;
-      height: 32px;
+      border: none;
       cursor: pointer;
+      font-size: 12px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 4px;
+      margin: 2px;
     }
 
-    .action-btn:hover {
-      background: #1e5bc6;
+    .action-btn-copy {
+      background: #2196f3;
+      color: white;
     }
 
-    .action-btn.remove-btn {
-      background: #e55353;
+    .action-btn-copy:hover {
+      background: #1976d2;
     }
 
-    .action-btn.remove-btn:hover {
-      background: #dc2626;
+    .action-btn-remove {
+      background: #f44336;
+      color: white;
     }
 
-    .action-btn svg {
-      width: 16px;
-      height: 16px;
-      fill: currentColor;
+    .action-btn-remove:hover {
+      background: #d32f2f;
     }
 
-    .totals {
+    .actions-cell {
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .totals-bar {
       display: flex;
       justify-content: flex-end;
       gap: 12px;
       flex-wrap: wrap;
-      align-items: center;
+      margin-top: 8px;
     }
 
-    .total-field {
-      font-weight: bold;
+    .total-box {
       padding: 8px 14px;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-weight: bold;
       font-size: 13px;
     }
 
-    .total-check-cash {
-      background: #e0e7ff;
-      color: #3730a3;
+    .total-received {
+      background: #e3f2fd;
+      color: #1565c0;
     }
 
     .total-allocated {
-      background: #d1fae5;
-      color: #065f46;
+      background: #e8f5e9;
+      color: #2e7d32;
     }
 
     .total-difference {
-      background: #fef3c7;
-      color: #92400e;
+      background: #fff3e0;
+      color: #ef6c00;
     }
 
     .total-difference.balanced {
-      background: #d1fae5;
-      color: #065f46;
+      background: #e8f5e9;
+      color: #2e7d32;
     }
 
     .total-difference.over {
-      background: #fee2e2;
-      color: #991b1b;
+      background: #ffebee;
+      color: #c62828;
     }
 
-    .total-difference.under {
-      background: #fef3c7;
-      color: #92400e;
+    .icon-svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
     }
   </style>
 </head>
 <body>
   <div id="main">
     <div class="table-wrapper">
-      <table class="matrix-table" aria-label="Payment transmittal matrix">
+      <table class="matrix-table" aria-label="Cash Transmittal">
         <thead>
           <tr>
             <th id="col-borrower">Borrower Name</th>
             <th id="col-remitter">Remitter Name</th>
-            <th id="col-payment-type">Cash or Check</th>
-            <th id="col-check-cash">Check/Cash Amount</th>
-            <th id="col-date">Effective Date</th>
-            <th id="col-loan">Loan # / Amount</th>
-            <th id="col-remarks">Remarks</th>
+            <th id="col-paymentType">Payment Type</th>
+            <th id="col-checkCashAmount">Check/Cash Amount</th>
+            <th id="col-effectiveDate">Effective Date</th>
+            <th id="col-loanApplied">Loan Applied (Loan # / Amount / Comments)</th>
             <th id="col-actions">Actions</th>
           </tr>
         </thead>
         <tbody id="matrixBody"></tbody>
       </table>
     </div>
-    <div class="totals">
-      <div class="total-field total-check-cash">Total Check/Cash: <span id="totalCheckCash">$0.00</span></div>
-      <div class="total-field total-allocated">Total Allocated: <span id="totalAllocated">$0.00</span></div>
-      <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
+    <div class="totals-bar">
+      <div class="total-box total-received">Total Received: <span id="totalReceived">$0.00</span></div>
+      <div class="total-box total-allocated">Total Allocated: <span id="totalAllocated">$0.00</span></div>
+      <div class="total-box total-difference" id="differenceBox">Difference: <span id="totalDifference">$0.00</span></div>
     </div>
   </div>
 
-  <script type="text/javascript">
-    var matrixBody = document.getElementById('matrixBody');
-    var totalCheckCashEl = document.getElementById('totalCheckCash');
-    var totalAllocatedEl = document.getElementById('totalAllocated');
-    var totalDifferenceEl = document.getElementById('totalDifference');
-    var differenceField = document.getElementById('differenceField');
-    var initialized = false;
+  <script>
+    // ===========================================
+    // UUID GENERATOR
+    // ===========================================
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0;
+        var v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
 
-    // Default settings
-    var settings = {
-      columnHeaders: {
-        borrower: 'Borrower Name',
-        remitter: 'Remitter Name',
-        paymentType: 'Cash or Check',
-        checkCashAmount: 'Check/Cash Amount',
-        effectiveDate: 'Effective Date',
-        loanAmount: 'Loan # / Amount',
-        remarks: 'Remarks',
-        actions: 'Actions'
-      },
+    // ===========================================
+    // CONFIGURATION & DEFAULTS
+    // ===========================================
+    var config = {
       paymentTypes: ['Cash', 'Check', 'Money Order'],
       placeholders: {
         borrower: 'Borrower Name',
         remitter: 'Remitter Name',
         checkCashAmount: '0.00',
         loanNumber: 'Loan #',
-        amount: '0.00',
-        remarks: 'Remarks'
-      }
+        loanAmount: '0.00',
+        loanComments: 'Comments'
+      },
+      sharePointSiteUrl: '',
+      transactionsListName: 'Transactions',
+      loanAppliedsListName: 'LoanApplieds'
     };
 
+    // Transmittal ID - generated once per form session
+    var transmittalId = generateUUID();
+    var transmittalTimestamp = new Date().toISOString();
+
+    // ===========================================
+    // DOM REFERENCES
+    // ===========================================
+    var matrixBody = document.getElementById('matrixBody');
+    var totalReceivedEl = document.getElementById('totalReceived');
+    var totalAllocatedEl = document.getElementById('totalAllocated');
+    var totalDifferenceEl = document.getElementById('totalDifference');
+    var differenceBox = document.getElementById('differenceBox');
+
+    var initialized = false;
+
+    // ===========================================
+    // UTILITY FUNCTIONS
+    // ===========================================
     function formatCurrency(value) {
-      var numberValue = Number(value);
-      if (Number.isNaN(numberValue)) {
-        return '$0.00';
-      }
-      return '$' + numberValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var num = parseFloat(value);
+      if (isNaN(num)) return '$0.00';
+      return '$' + num.toFixed(2);
     }
 
     function parseCurrency(value) {
-      return parseFloat(value) || 0;
+      var num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
     }
 
     function isValidLoanNumber(value) {
-      if (!value || value.trim() === '') return true; // Empty is okay, validation handles required
-      var cleaned = value.trim();
-      return /^\d{6,7}$/.test(cleaned);
+      if (!value || value.trim() === '') return true; // Empty is ok, just not filled yet
+      var cleaned = value.replace(/\D/g, '');
+      return cleaned.length >= 6 && cleaned.length <= 7;
     }
 
-    function createCellInput(type, name, placeholder) {
-      var input = document.createElement('input');
-      input.type = type;
-      input.name = name;
-      input.autocomplete = 'off';
-      input.setAttribute('autocomplete', 'off');
-      input.setAttribute('data-lpignore', 'true');
-      input.setAttribute('data-form-type', 'other');
-      if (placeholder) {
-        input.placeholder = placeholder;
-      }
-      if (type === 'number') {
-        input.step = '0.01';
-        input.min = '0';
-      }
-      input.addEventListener('input', handleInputChange);
-      input.addEventListener('blur', function() {
-        updateData();
-      });
-      return input;
+    function isRowFilled(row) {
+      var borrower = row.querySelector('[name="borrower"]');
+      if (borrower && borrower.value.trim() !== '') return true;
+      var checkAmount = row.querySelector('[name="checkCashAmount"]');
+      if (checkAmount && parseCurrency(checkAmount.value) > 0) return true;
+      return false;
     }
 
-    function createSelect(name, options) {
-      var select = document.createElement('select');
-      select.name = name;
-      select.autocomplete = 'off';
-      options.forEach(function(optionValue) {
-        var option = document.createElement('option');
-        option.value = optionValue;
-        option.textContent = optionValue;
-        select.appendChild(option);
-      });
-      select.addEventListener('change', function() {
-        handleInputChange();
-        updateData();
-      });
-      return select;
+    function isLastRow(row) {
+      var rows = matrixBody.querySelectorAll('tr');
+      return rows.length > 0 && rows[rows.length - 1] === row;
     }
 
-    function createLoanAllocationRow(container, isFirst) {
-      var loanRow = document.createElement('div');
-      loanRow.className = 'loan-row';
+    function getRowCount() {
+      return matrixBody.querySelectorAll('tr').length;
+    }
 
-      var loanInput = createCellInput('text', 'loanNumber', settings.placeholders.loanNumber);
-      loanInput.addEventListener('input', function() {
-        if (isValidLoanNumber(this.value)) {
-          this.classList.remove('invalid-loan');
-        } else {
-          this.classList.add('invalid-loan');
-        }
-        updateTotals();
-        updateData();
-      });
+    // ===========================================
+    // LOAN APPLIED MANAGEMENT
+    // ===========================================
+    function createLoanAppliedRow(container, isFirst, loanAppliedId) {
+      var row = document.createElement('div');
+      row.className = 'loan-applied-row';
+      row.dataset.loanAppliedId = loanAppliedId || generateUUID();
 
-      var amountInput = createCellInput('number', 'amount', settings.placeholders.amount);
-      amountInput.addEventListener('input', function() {
-        updateTotals();
-        updateData();
-      });
+      var loanInput = document.createElement('input');
+      loanInput.type = 'text';
+      loanInput.name = 'loanNumber';
+      loanInput.placeholder = config.placeholders.loanNumber;
+      loanInput.autocomplete = 'off';
+      loanInput.addEventListener('input', handleLoanNumberInput);
+      loanInput.addEventListener('blur', handleInputChange);
 
-      loanRow.appendChild(loanInput);
-      loanRow.appendChild(amountInput);
+      var amountInput = document.createElement('input');
+      amountInput.type = 'number';
+      amountInput.name = 'loanAmount';
+      amountInput.placeholder = config.placeholders.loanAmount;
+      amountInput.step = '0.01';
+      amountInput.min = '0';
+      amountInput.autocomplete = 'off';
+      amountInput.addEventListener('input', handleInputChange);
+      amountInput.addEventListener('blur', handleInputChange);
+
+      var commentsInput = document.createElement('input');
+      commentsInput.type = 'text';
+      commentsInput.name = 'loanComments';
+      commentsInput.placeholder = config.placeholders.loanComments;
+      commentsInput.autocomplete = 'off';
+      commentsInput.addEventListener('blur', handleInputChange);
+
+      row.appendChild(loanInput);
+      row.appendChild(amountInput);
+      row.appendChild(commentsInput);
 
       if (isFirst) {
         var addBtn = document.createElement('button');
         addBtn.type = 'button';
-        addBtn.className = 'loan-add-btn';
-        addBtn.textContent = '+';
+        addBtn.className = 'loan-btn loan-btn-add';
+        addBtn.innerHTML = '+';
         addBtn.title = 'Add another loan allocation';
         addBtn.tabIndex = 0;
         addBtn.addEventListener('click', function() {
-          createLoanAllocationRow(container, false);
-          updateData();
+          createLoanAppliedRow(container, false);
+          updateTotals();
+          sendData();
+          notifyHeight();
         });
-        loanRow.appendChild(addBtn);
+        row.appendChild(addBtn);
       } else {
         var removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'loan-remove-btn';
-        removeBtn.textContent = '×';
+        removeBtn.className = 'loan-btn loan-btn-remove';
+        removeBtn.innerHTML = '×';
         removeBtn.title = 'Remove this loan allocation';
-        removeBtn.tabIndex = 0;
+        removeBtn.tabIndex = -1;
         removeBtn.addEventListener('click', function() {
-          loanRow.remove();
+          row.remove();
           updateTotals();
-          updateData();
+          sendData();
+          notifyHeight();
         });
-        loanRow.appendChild(removeBtn);
+        row.appendChild(removeBtn);
       }
 
-      container.appendChild(loanRow);
-      return loanRow;
+      container.appendChild(row);
+      return row;
     }
 
-    function addRow(defaults) {
+    function handleLoanNumberInput(event) {
+      var input = event.target;
+      var value = input.value;
+
+      input.classList.remove('invalid-loan');
+
+      if (value.trim() !== '' && !isValidLoanNumber(value)) {
+        input.classList.add('invalid-loan');
+      }
+
+      handleInputChange();
+    }
+
+    // ===========================================
+    // ROW MANAGEMENT
+    // ===========================================
+    function createRow(defaults, transactionId) {
       var row = document.createElement('tr');
-      row.className = 'transmittal-row';
+      row.dataset.transactionId = transactionId || generateUUID();
 
       // Borrower
       var borrowerCell = document.createElement('td');
-      var borrowerInput = createCellInput('text', 'borrower', settings.placeholders.borrower);
+      var borrowerInput = document.createElement('input');
+      borrowerInput.type = 'text';
+      borrowerInput.name = 'borrower';
+      borrowerInput.placeholder = config.placeholders.borrower;
+      borrowerInput.autocomplete = 'off';
+      borrowerInput.addEventListener('input', handleInputChange);
+      borrowerInput.addEventListener('blur', handleInputChange);
       borrowerCell.appendChild(borrowerInput);
       row.appendChild(borrowerCell);
 
       // Remitter
       var remitterCell = document.createElement('td');
-      remitterCell.appendChild(createCellInput('text', 'remitter', settings.placeholders.remitter));
+      var remitterInput = document.createElement('input');
+      remitterInput.type = 'text';
+      remitterInput.name = 'remitter';
+      remitterInput.placeholder = config.placeholders.remitter;
+      remitterInput.autocomplete = 'off';
+      remitterInput.addEventListener('blur', handleInputChange);
+      remitterCell.appendChild(remitterInput);
       row.appendChild(remitterCell);
 
       // Payment Type
-      var paymentTypeCell = document.createElement('td');
-      paymentTypeCell.appendChild(createSelect('paymentType', settings.paymentTypes));
-      row.appendChild(paymentTypeCell);
+      var paymentCell = document.createElement('td');
+      var paymentSelect = document.createElement('select');
+      paymentSelect.name = 'paymentType';
+      config.paymentTypes.forEach(function(opt) {
+        var option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        paymentSelect.appendChild(option);
+      });
+      paymentSelect.addEventListener('change', handleInputChange);
+      paymentCell.appendChild(paymentSelect);
+      row.appendChild(paymentCell);
 
       // Check/Cash Amount
-      var checkCashCell = document.createElement('td');
-      var checkCashInput = createCellInput('number', 'checkCashAmount', settings.placeholders.checkCashAmount);
-      checkCashInput.addEventListener('input', function() {
-        updateTotals();
-        updateData();
-      });
-      checkCashCell.appendChild(checkCashInput);
-      row.appendChild(checkCashCell);
+      var amountCell = document.createElement('td');
+      var amountInput = document.createElement('input');
+      amountInput.type = 'number';
+      amountInput.name = 'checkCashAmount';
+      amountInput.placeholder = config.placeholders.checkCashAmount;
+      amountInput.step = '0.01';
+      amountInput.min = '0';
+      amountInput.autocomplete = 'off';
+      amountInput.addEventListener('input', handleInputChange);
+      amountInput.addEventListener('blur', handleInputChange);
+      amountCell.appendChild(amountInput);
+      row.appendChild(amountCell);
 
       // Effective Date
       var dateCell = document.createElement('td');
-      dateCell.appendChild(createCellInput('date', 'effectiveDate'));
+      var dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.name = 'effectiveDate';
+      dateInput.autocomplete = 'off';
+      dateInput.addEventListener('change', handleInputChange);
+      dateCell.appendChild(dateInput);
       row.appendChild(dateCell);
 
-      // Loan Allocations
+      // Loan Applied Container
       var loanCell = document.createElement('td');
-      var loanAllocations = document.createElement('div');
-      loanAllocations.className = 'loan-allocations';
-      createLoanAllocationRow(loanAllocations, true);
-      loanCell.appendChild(loanAllocations);
+      var loanContainer = document.createElement('div');
+      loanContainer.className = 'loan-applied-container';
+      createLoanAppliedRow(loanContainer, true);
+      loanCell.appendChild(loanContainer);
       row.appendChild(loanCell);
-
-      // Remarks
-      var remarksCell = document.createElement('td');
-      remarksCell.appendChild(createCellInput('text', 'remarks', settings.placeholders.remarks));
-      row.appendChild(remarksCell);
 
       // Actions
       var actionsCell = document.createElement('td');
-      var actionsDiv = document.createElement('div');
-      actionsDiv.className = 'actions-cell';
+      actionsCell.className = 'actions-cell';
 
-      // Copy Borrower button
       var copyBorrowerBtn = document.createElement('button');
       copyBorrowerBtn.type = 'button';
-      copyBorrowerBtn.className = 'action-btn';
-      copyBorrowerBtn.title = 'Copy Borrower to next row';
+      copyBorrowerBtn.className = 'action-btn action-btn-copy';
+      copyBorrowerBtn.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 1H4C3 1 2 2 2 3v14h2V3h12V1zm3 4H8C7 5 6 6 6 7v14c0 1 1 2 2 2h11c1 0 2-1 2-2V7c0-1-1-2-2-2zm0 16H8V7h11v14z"/></svg>';
+      copyBorrowerBtn.title = 'Copy Borrower to new row';
       copyBorrowerBtn.tabIndex = 0;
-      copyBorrowerBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
       copyBorrowerBtn.addEventListener('click', function() {
         copyBorrower(row);
       });
-      actionsDiv.appendChild(copyBorrowerBtn);
 
-      // Remove button
       var removeBtn = document.createElement('button');
       removeBtn.type = 'button';
-      removeBtn.className = 'action-btn remove-btn';
+      removeBtn.className = 'action-btn action-btn-remove';
+      removeBtn.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>';
       removeBtn.title = 'Remove row';
       removeBtn.tabIndex = -1;
-      removeBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
       removeBtn.addEventListener('click', function() {
-        var rows = matrixBody.querySelectorAll('tr.transmittal-row');
-        if (rows.length > 1) {
-          row.remove();
-          updateTotals();
-          ensureEmptyRow();
-          updateData();
-          notifyHeight();
-        }
+        removeRow(row);
       });
-      actionsDiv.appendChild(removeBtn);
 
-      actionsCell.appendChild(actionsDiv);
+      actionsCell.appendChild(copyBorrowerBtn);
+      actionsCell.appendChild(removeBtn);
       row.appendChild(actionsCell);
 
       matrixBody.appendChild(row);
 
-      // Apply defaults if provided
+      // Apply defaults
       if (defaults) {
-        if (defaults.borrower) {
-          row.querySelector('[name="borrower"]').value = defaults.borrower;
-        }
-        if (defaults.remitter) {
-          row.querySelector('[name="remitter"]').value = defaults.remitter;
-        }
+        if (defaults.borrower) borrowerInput.value = defaults.borrower;
+        if (defaults.remitter) remitterInput.value = defaults.remitter;
+        if (defaults.paymentType) paymentSelect.value = defaults.paymentType;
+        if (defaults.checkCashAmount) amountInput.value = defaults.checkCashAmount;
+        if (defaults.effectiveDate) dateInput.value = defaults.effectiveDate;
       }
 
       updateTotals();
+      sendData();
       notifyHeight();
+
       return row;
+    }
+
+    function removeRow(row) {
+      var rows = matrixBody.querySelectorAll('tr');
+      if (rows.length <= 2) {
+        // Clear the row instead of removing if we're at minimum
+        row.querySelector('[name="borrower"]').value = '';
+        row.querySelector('[name="remitter"]').value = '';
+        row.querySelector('[name="paymentType"]').selectedIndex = 0;
+        row.querySelector('[name="checkCashAmount"]').value = '';
+        row.querySelector('[name="effectiveDate"]').value = '';
+
+        var loanContainer = row.querySelector('.loan-applied-container');
+        loanContainer.innerHTML = '';
+        createLoanAppliedRow(loanContainer, true);
+      } else {
+        row.remove();
+      }
+
+      ensureBlankRow();
+      updateTotals();
+      sendData();
+      notifyHeight();
     }
 
     function copyBorrower(sourceRow) {
       var borrower = sourceRow.querySelector('[name="borrower"]').value;
       var remitter = sourceRow.querySelector('[name="remitter"]').value;
 
-      var rows = matrixBody.querySelectorAll('tr.transmittal-row');
+      var rows = matrixBody.querySelectorAll('tr');
       var lastRow = rows[rows.length - 1];
 
-      if (isRowEmpty(lastRow)) {
+      if (!isRowFilled(lastRow)) {
         lastRow.querySelector('[name="borrower"]').value = borrower;
         lastRow.querySelector('[name="remitter"]').value = remitter;
-        lastRow.querySelector('[name="borrower"]').focus();
+        ensureBlankRow();
       } else {
-        var newRow = addRow({ borrower: borrower, remitter: remitter });
-        newRow.querySelector('[name="paymentType"]').focus();
-      }
-
-      ensureEmptyRow();
-      updateData();
-    }
-
-    function updateTotals() {
-      var rows = matrixBody.querySelectorAll('tr.transmittal-row');
-      var totalCheckCash = 0;
-      var totalAllocated = 0;
-
-      rows.forEach(function(row) {
-        var checkCashValue = parseCurrency(row.querySelector('[name="checkCashAmount"]').value);
-        totalCheckCash += checkCashValue;
-
-        var loanRows = row.querySelectorAll('.loan-row');
-        loanRows.forEach(function(loanRow) {
-          var amountInput = loanRow.querySelector('[name="amount"]');
-          if (amountInput) {
-            totalAllocated += parseCurrency(amountInput.value);
-          }
-        });
-      });
-
-      var difference = totalCheckCash - totalAllocated;
-
-      totalCheckCashEl.textContent = formatCurrency(totalCheckCash);
-      totalAllocatedEl.textContent = formatCurrency(totalAllocated);
-      totalDifferenceEl.textContent = formatCurrency(Math.abs(difference));
-
-      // Update difference styling
-      differenceField.classList.remove('balanced', 'over', 'under');
-      if (Math.abs(difference) < 0.01) {
-        differenceField.classList.add('balanced');
-        totalDifferenceEl.textContent = '$0.00 ✓';
-      } else if (difference > 0) {
-        differenceField.classList.add('under');
-        totalDifferenceEl.textContent = formatCurrency(difference) + ' under';
-      } else {
-        differenceField.classList.add('over');
-        totalDifferenceEl.textContent = formatCurrency(Math.abs(difference)) + ' over';
-      }
-    }
-
-    function handleInputChange(event) {
-      var targetRow = event ? event.target.closest('tr.transmittal-row') : null;
-
-      if (targetRow && isLastRow(targetRow) && !isRowEmpty(targetRow)) {
-        var rows = matrixBody.querySelectorAll('tr.transmittal-row');
-        var lastRow = rows[rows.length - 1];
-        if (!isRowEmpty(lastRow)) {
-          addRow();
-        }
+        createRow({ borrower: borrower, remitter: remitter });
+        ensureBlankRow();
       }
 
       updateTotals();
+      sendData();
     }
 
-    function isRowEmpty(row) {
-      var borrower = row.querySelector('[name="borrower"]').value.trim();
-      var checkCash = row.querySelector('[name="checkCashAmount"]').value.trim();
-      var loanInputs = row.querySelectorAll('[name="loanNumber"]');
-      var hasLoan = false;
-      loanInputs.forEach(function(input) {
-        if (input.value.trim() !== '') hasLoan = true;
-      });
-
-      return borrower === '' && checkCash === '' && !hasLoan;
-    }
-
-    function isLastRow(row) {
-      var rows = matrixBody.querySelectorAll('tr.transmittal-row');
-      return rows.length && rows[rows.length - 1] === row;
-    }
-
-    function ensureEmptyRow() {
-      var rows = matrixBody.querySelectorAll('tr.transmittal-row');
-      if (!rows.length) {
-        addRow();
-        addRow();
+    function ensureBlankRow() {
+      var rows = matrixBody.querySelectorAll('tr');
+      if (rows.length === 0) {
+        createRow();
+        createRow();
         return;
       }
+
       var lastRow = rows[rows.length - 1];
-      if (!isRowEmpty(lastRow)) {
-        addRow();
+      if (isRowFilled(lastRow)) {
+        createRow();
       }
     }
 
-    function collectRows() {
-      var rows = [];
-      var transmittalRows = matrixBody.querySelectorAll('tr.transmittal-row');
+    function handleInputChange() {
+      var rows = matrixBody.querySelectorAll('tr');
+      var lastRow = rows[rows.length - 1];
 
-      transmittalRows.forEach(function(row, index) {
-        var borrower = row.querySelector('[name="borrower"]').value.trim();
-        var checkCash = row.querySelector('[name="checkCashAmount"]').value;
+      if (lastRow && isRowFilled(lastRow) && isLastRow(lastRow)) {
+        createRow();
+      }
 
-        // Skip completely empty rows
-        if (borrower === '' && checkCash === '') {
-          var hasAnyLoan = false;
-          row.querySelectorAll('[name="loanNumber"]').forEach(function(input) {
-            if (input.value.trim() !== '') hasAnyLoan = true;
-          });
-          if (!hasAnyLoan) return;
-        }
+      updateTotals();
+      sendData();
+    }
 
-        var loanAllocations = [];
-        var loanRows = row.querySelectorAll('.loan-row');
-        loanRows.forEach(function(loanRow) {
-          var loanNumber = loanRow.querySelector('[name="loanNumber"]').value.trim();
-          var amount = loanRow.querySelector('[name="amount"]').value;
-          if (loanNumber !== '' || amount !== '') {
-            loanAllocations.push({
-              loanNumber: loanNumber,
-              amount: parseCurrency(amount).toFixed(2)
-            });
-          }
-        });
+    // ===========================================
+    // TOTALS CALCULATION
+    // ===========================================
+    function updateTotals() {
+      var rows = matrixBody.querySelectorAll('tr');
+      var totalReceived = 0;
+      var totalAllocated = 0;
 
-        rows.push({
-          rowNumber: rows.length + 1,
-          borrower: borrower,
-          remitter: row.querySelector('[name="remitter"]').value.trim(),
-          paymentType: row.querySelector('[name="paymentType"]').value,
-          checkCashAmount: parseCurrency(checkCash).toFixed(2),
-          effectiveDate: row.querySelector('[name="effectiveDate"]').value,
-          loanAllocations: loanAllocations,
-          remarks: row.querySelector('[name="remarks"]').value.trim()
+      rows.forEach(function(row) {
+        var checkCashAmount = parseCurrency(row.querySelector('[name="checkCashAmount"]').value);
+        totalReceived += checkCashAmount;
+
+        var loanAmounts = row.querySelectorAll('[name="loanAmount"]');
+        loanAmounts.forEach(function(input) {
+          totalAllocated += parseCurrency(input.value);
         });
       });
 
-      return rows;
+      var difference = totalReceived - totalAllocated;
+
+      totalReceivedEl.textContent = formatCurrency(totalReceived);
+      totalAllocatedEl.textContent = formatCurrency(totalAllocated);
+      totalDifferenceEl.textContent = formatCurrency(Math.abs(difference));
+
+      differenceBox.classList.remove('balanced', 'over');
+      if (Math.abs(difference) < 0.01) {
+        differenceBox.classList.add('balanced');
+        totalDifferenceEl.textContent = '$0.00 ✓';
+      } else if (difference < 0) {
+        differenceBox.classList.add('over');
+        totalDifferenceEl.textContent = '-' + formatCurrency(Math.abs(difference)) + ' (Over)';
+      } else {
+        totalDifferenceEl.textContent = formatCurrency(difference) + ' (Unallocated)';
+      }
     }
 
-    function buildFormattedText(rows, totalCheckCash, totalAllocated, difference) {
-      var lines = [];
-      lines.push('PAYMENT TRANSMITTAL SUMMARY');
-      lines.push('='.repeat(50));
-      lines.push('');
+    // ===========================================
+    // DATA COLLECTION & SUBMISSION
+    // ===========================================
+    function collectData() {
+      var transactions = [];
+      var loanApplieds = [];
+
+      var rows = matrixBody.querySelectorAll('tr');
 
       rows.forEach(function(row, index) {
-        lines.push('--- Entry #' + row.rowNumber + ' ---');
-        lines.push('Borrower: ' + (row.borrower || 'N/A'));
-        if (row.remitter) {
-          lines.push('Remitter: ' + row.remitter);
-        }
-        lines.push('Payment Type: ' + row.paymentType);
-        lines.push('Check/Cash Amount: $' + row.checkCashAmount);
-        if (row.effectiveDate) {
-          lines.push('Effective Date: ' + row.effectiveDate);
-        }
+        var borrower = row.querySelector('[name="borrower"]').value.trim();
+        var checkCashAmount = parseCurrency(row.querySelector('[name="checkCashAmount"]').value);
 
-        if (row.loanAllocations.length > 0) {
-          lines.push('Loan Allocations:');
-          row.loanAllocations.forEach(function(loan) {
-            lines.push('  • Loan #' + loan.loanNumber + ': $' + loan.amount);
+        // Skip empty rows
+        if (!borrower && checkCashAmount === 0) return;
+
+        var transactionId = row.dataset.transactionId;
+        var loanAppliedRows = row.querySelectorAll('.loan-applied-row');
+
+        var transactionLoanApplieds = [];
+        var transactionAllocatedTotal = 0;
+        var commentsRollup = [];
+
+        loanAppliedRows.forEach(function(loanRow) {
+          var loanNumber = loanRow.querySelector('[name="loanNumber"]').value.trim();
+          var loanAmount = parseCurrency(loanRow.querySelector('[name="loanAmount"]').value);
+          var loanComments = loanRow.querySelector('[name="loanComments"]').value.trim();
+
+          // Skip empty loan applieds
+          if (!loanNumber && loanAmount === 0 && !loanComments) return;
+
+          var loanAppliedId = loanRow.dataset.loanAppliedId;
+          transactionAllocatedTotal += loanAmount;
+
+          if (loanComments) {
+            commentsRollup.push(loanComments);
+          }
+
+          var loanAppliedRecord = {
+            LoanApplied_ID: loanAppliedId,
+            Transaction_ID: transactionId,
+            Transmittal_ID: transmittalId,
+            LoanNumber: loanNumber,
+            Amount: loanAmount,
+            Comments: loanComments
+          };
+
+          transactionLoanApplieds.push(loanAppliedRecord);
+          loanApplieds.push(loanAppliedRecord);
+        });
+
+        var transactionRecord = {
+          Transaction_ID: transactionId,
+          Transmittal_ID: transmittalId,
+          RowIndex: index + 1,
+          BorrowerName: borrower,
+          RemitterName: row.querySelector('[name="remitter"]').value.trim(),
+          PaymentType: row.querySelector('[name="paymentType"]').value,
+          CheckCashAmount: checkCashAmount,
+          EffectiveDate: row.querySelector('[name="effectiveDate"]').value,
+          AllocatedTotal: transactionAllocatedTotal,
+          LoanAppliedCount: transactionLoanApplieds.length,
+          CommentsRollup: commentsRollup.join(', '),
+          LoanApplieds: transactionLoanApplieds
+        };
+
+        transactions.push(transactionRecord);
+      });
+
+      // Calculate totals
+      var totalReceived = transactions.reduce(function(sum, t) { return sum + t.CheckCashAmount; }, 0);
+      var totalAllocated = loanApplieds.reduce(function(sum, l) { return sum + l.Amount; }, 0);
+
+      var transmittal = {
+        Transmittal_ID: transmittalId,
+        Timestamp: transmittalTimestamp,
+        TotalReceived: totalReceived,
+        TotalAllocated: totalAllocated,
+        Difference: totalReceived - totalAllocated,
+        TransactionCount: transactions.length,
+        LoanAppliedCount: loanApplieds.length,
+        IsBalanced: Math.abs(totalReceived - totalAllocated) < 0.01
+      };
+
+      // Build SharePoint drill-down URLs (templates)
+      var sharePointUrls = {};
+      if (config.sharePointSiteUrl) {
+        sharePointUrls.transactionsForTransmittal = config.sharePointSiteUrl + '/Lists/' + config.transactionsListName + '/AllItems.aspx?FilterField1=Transmittal_ID&FilterValue1=' + transmittalId;
+        sharePointUrls.loanAppliedsForTransmittal = config.sharePointSiteUrl + '/Lists/' + config.loanAppliedsListName + '/AllItems.aspx?FilterField1=Transmittal_ID&FilterValue1=' + transmittalId;
+      }
+
+      return {
+        transmittal: transmittal,
+        transactions: transactions,
+        loanApplieds: loanApplieds,
+        sharePointUrls: sharePointUrls
+      };
+    }
+
+    function buildFormattedText(data) {
+      var lines = [];
+
+      lines.push('═══════════════════════════════════════');
+      lines.push('CASH TRANSMITTAL SUMMARY');
+      lines.push('═══════════════════════════════════════');
+      lines.push('Transmittal ID: ' + data.transmittal.Transmittal_ID);
+      lines.push('Submitted: ' + new Date(data.transmittal.Timestamp).toLocaleString());
+      lines.push('');
+      lines.push('Total Received:  ' + formatCurrency(data.transmittal.TotalReceived));
+      lines.push('Total Allocated: ' + formatCurrency(data.transmittal.TotalAllocated));
+      lines.push('Difference:      ' + formatCurrency(data.transmittal.Difference) + (data.transmittal.IsBalanced ? ' ✓ Balanced' : ''));
+      lines.push('');
+      lines.push('Transactions: ' + data.transmittal.TransactionCount);
+      lines.push('Loan Applications: ' + data.transmittal.LoanAppliedCount);
+      lines.push('');
+
+      data.transactions.forEach(function(t, i) {
+        lines.push('───────────────────────────────────────');
+        lines.push('TRANSACTION #' + (i + 1) + ' [ID: ' + t.Transaction_ID.substring(0, 8) + '...]');
+        lines.push('───────────────────────────────────────');
+        lines.push('Borrower:     ' + t.BorrowerName);
+        if (t.RemitterName) lines.push('Remitter:     ' + t.RemitterName);
+        lines.push('Payment Type: ' + t.PaymentType);
+        lines.push('Amount:       ' + formatCurrency(t.CheckCashAmount));
+        if (t.EffectiveDate) lines.push('Eff. Date:    ' + t.EffectiveDate);
+        lines.push('');
+
+        if (t.LoanApplieds && t.LoanApplieds.length > 0) {
+          lines.push('  LOAN APPLICATIONS:');
+          t.LoanApplieds.forEach(function(l, j) {
+            var loanLine = '    ' + (j + 1) + '. Loan #' + l.LoanNumber + ': ' + formatCurrency(l.Amount);
+            if (l.Comments) loanLine += ' — ' + l.Comments;
+            lines.push(loanLine);
           });
-        }
-
-        if (row.remarks) {
-          lines.push('Remarks: ' + row.remarks);
+          lines.push('  Allocated Total: ' + formatCurrency(t.AllocatedTotal));
         }
         lines.push('');
       });
 
-      lines.push('='.repeat(50));
-      lines.push('TOTALS');
-      lines.push('Total Check/Cash Received: $' + totalCheckCash);
-      lines.push('Total Allocated to Loans: $' + totalAllocated);
-      var diff = parseFloat(totalCheckCash) - parseFloat(totalAllocated);
-      if (Math.abs(diff) < 0.01) {
-        lines.push('Difference: $0.00 (Balanced)');
-      } else if (diff > 0) {
-        lines.push('Difference: $' + diff.toFixed(2) + ' (Under-allocated)');
-      } else {
-        lines.push('Difference: $' + Math.abs(diff).toFixed(2) + ' (Over-allocated)');
-      }
-      lines.push('Total Entries: ' + rows.length);
+      lines.push('═══════════════════════════════════════');
 
       return lines.join('\n');
     }
 
-    function updateData() {
-      var rows = collectRows();
+    function sendData() {
+      if (typeof JFCustomWidget === 'undefined') return;
 
-      var totalCheckCash = 0;
-      var totalAllocated = 0;
-
-      rows.forEach(function(row) {
-        totalCheckCash += parseCurrency(row.checkCashAmount);
-        row.loanAllocations.forEach(function(loan) {
-          totalAllocated += parseCurrency(loan.amount);
-        });
-      });
-
-      var difference = totalCheckCash - totalAllocated;
-
-      var jsonData = {
-        rows: rows,
-        totalCheckCash: totalCheckCash.toFixed(2),
-        totalAllocated: totalAllocated.toFixed(2),
-        difference: difference.toFixed(2),
-        rowCount: rows.length
-      };
-
-      var formattedText = buildFormattedText(rows, totalCheckCash.toFixed(2), totalAllocated.toFixed(2), difference.toFixed(2));
+      var data = collectData();
+      var formattedText = buildFormattedText(data);
 
       var payload = {
-        json: jsonData,
-        formatted: formattedText
+        json: data,
+        text: formattedText,
+        transmittalId: transmittalId
       };
 
-      if (typeof JFCustomWidget !== 'undefined') {
-        try {
-          JFCustomWidget.sendData(payload);
-        } catch (e) {
-          console.log('Error sending data:', e);
-        }
-      }
+      JFCustomWidget.sendData({
+        value: JSON.stringify(payload),
+        valid: true
+      });
     }
 
+    // ===========================================
+    // JOTFORM WIDGET INTEGRATION
+    // ===========================================
     function notifyHeight() {
       if (typeof JFCustomWidget !== 'undefined') {
         try {
@@ -749,35 +820,20 @@
       }
     }
 
-    function applySettings() {
-      if (settings.columnHeaders) {
-        if (settings.columnHeaders.borrower) document.getElementById('col-borrower').textContent = settings.columnHeaders.borrower;
-        if (settings.columnHeaders.remitter) document.getElementById('col-remitter').textContent = settings.columnHeaders.remitter;
-        if (settings.columnHeaders.paymentType) document.getElementById('col-payment-type').textContent = settings.columnHeaders.paymentType;
-        if (settings.columnHeaders.checkCashAmount) document.getElementById('col-check-cash').textContent = settings.columnHeaders.checkCashAmount;
-        if (settings.columnHeaders.effectiveDate) document.getElementById('col-date').textContent = settings.columnHeaders.effectiveDate;
-        if (settings.columnHeaders.loanAmount) document.getElementById('col-loan').textContent = settings.columnHeaders.loanAmount;
-        if (settings.columnHeaders.remarks) document.getElementById('col-remarks').textContent = settings.columnHeaders.remarks;
-        if (settings.columnHeaders.actions) document.getElementById('col-actions').textContent = settings.columnHeaders.actions;
-      }
-    }
-
     function initializeWidget() {
       if (initialized) return;
       initialized = true;
 
-      applySettings();
+      // Create first working row and blank row
+      createRow();
+      createRow();
 
-      // Add first working row
-      addRow();
-      // Add second blank/optional row
-      addRow();
-
-      updateData();
+      updateTotals();
+      sendData();
       notifyHeight();
     }
 
-    // Initialize on DOM ready as fallback
+    // Initialize on DOM ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
         setTimeout(initializeWidget, 100);
@@ -786,100 +842,63 @@
       setTimeout(initializeWidget, 100);
     }
 
-    // JotForm widget initialization
+    // JotForm Widget Integration
     if (typeof JFCustomWidget !== 'undefined') {
       JFCustomWidget.subscribe('ready', function() {
-        // Load custom settings from JotForm
-        var columnHeaders = JFCustomWidget.getWidgetSetting('columnHeaders');
-        if (columnHeaders) {
-          try {
-            var headers = columnHeaders.split(',');
-            if (headers.length >= 7) {
-              settings.columnHeaders.borrower = headers[0].trim();
-              settings.columnHeaders.remitter = headers[1].trim();
-              settings.columnHeaders.paymentType = headers[2].trim();
-              settings.columnHeaders.checkCashAmount = headers[3].trim();
-              settings.columnHeaders.effectiveDate = headers[4].trim();
-              settings.columnHeaders.loanAmount = headers[5].trim();
-              settings.columnHeaders.remarks = headers[6].trim();
-            }
-          } catch (e) {
-            console.log('Error parsing column headers:', e);
-          }
+        // Load configuration from widget settings
+        var paymentTypesParam = JFCustomWidget.getWidgetSetting('paymentTypes');
+        if (paymentTypesParam) {
+          config.paymentTypes = paymentTypesParam.split(',').map(function(s) { return s.trim(); });
         }
 
-        var paymentTypes = JFCustomWidget.getWidgetSetting('paymentTypes');
-        if (paymentTypes) {
-          try {
-            settings.paymentTypes = paymentTypes.split(',').map(function(item) {
-              return item.trim();
-            }).filter(function(item) {
-              return item !== '';
-            });
-          } catch (e) {
-            console.log('Error parsing payment types:', e);
-          }
+        var sharePointUrl = JFCustomWidget.getWidgetSetting('sharePointSiteUrl');
+        if (sharePointUrl) {
+          config.sharePointSiteUrl = sharePointUrl;
         }
 
-        var placeholders = JFCustomWidget.getWidgetSetting('placeholders');
-        if (placeholders) {
-          try {
-            var ph = placeholders.split(',');
-            if (ph.length >= 5) {
-              settings.placeholders.borrower = ph[0].trim();
-              settings.placeholders.remitter = ph[1].trim();
-              settings.placeholders.loanNumber = ph[2].trim();
-              settings.placeholders.amount = ph[3].trim();
-              settings.placeholders.remarks = ph[4].trim();
-            }
-          } catch (e) {
-            console.log('Error parsing placeholders:', e);
-          }
+        var transactionsListName = JFCustomWidget.getWidgetSetting('transactionsListName');
+        if (transactionsListName) {
+          config.transactionsListName = transactionsListName;
         }
+
+        var loanAppliedsListName = JFCustomWidget.getWidgetSetting('loanAppliedsListName');
+        if (loanAppliedsListName) {
+          config.loanAppliedsListName = loanAppliedsListName;
+        }
+
+        // Placeholder configuration
+        var placeholderBorrower = JFCustomWidget.getWidgetSetting('placeholderBorrower');
+        if (placeholderBorrower) config.placeholders.borrower = placeholderBorrower;
+
+        var placeholderRemitter = JFCustomWidget.getWidgetSetting('placeholderRemitter');
+        if (placeholderRemitter) config.placeholders.remitter = placeholderRemitter;
+
+        var placeholderLoanNumber = JFCustomWidget.getWidgetSetting('placeholderLoanNumber');
+        if (placeholderLoanNumber) config.placeholders.loanNumber = placeholderLoanNumber;
+
+        var placeholderLoanComments = JFCustomWidget.getWidgetSetting('placeholderLoanComments');
+        if (placeholderLoanComments) config.placeholders.loanComments = placeholderLoanComments;
 
         initializeWidget();
 
         JFCustomWidget.subscribe('submit', function() {
-          var rows = collectRows();
-
-          var totalCheckCash = 0;
-          var totalAllocated = 0;
-
-          rows.forEach(function(row) {
-            totalCheckCash += parseCurrency(row.checkCashAmount);
-            row.loanAllocations.forEach(function(loan) {
-              totalAllocated += parseCurrency(loan.amount);
-            });
-          });
-
-          var difference = totalCheckCash - totalAllocated;
-
-          var jsonData = {
-            rows: rows,
-            totalCheckCash: totalCheckCash.toFixed(2),
-            totalAllocated: totalAllocated.toFixed(2),
-            difference: difference.toFixed(2),
-            rowCount: rows.length
-          };
-
-          var formattedText = buildFormattedText(rows, totalCheckCash.toFixed(2), totalAllocated.toFixed(2), difference.toFixed(2));
+          var data = collectData();
+          var formattedText = buildFormattedText(data);
 
           var payload = {
-            json: jsonData,
-            formatted: formattedText
+            json: data,
+            text: formattedText,
+            transmittalId: transmittalId
           };
 
-          var msg = {
-            valid: true,
+          var isValid = data.transactions.length > 0;
+
+          JFCustomWidget.sendSubmit({
+            valid: isValid,
             value: JSON.stringify(payload)
-          };
-
-          JFCustomWidget.sendSubmit(msg);
+          });
         });
       });
-    } else {
-      // Fallback for testing outside JotForm
-      initializeWidget();
     }
   </script>
 </body>
