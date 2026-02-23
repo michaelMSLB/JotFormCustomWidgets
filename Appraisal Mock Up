@@ -1,0 +1,440 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Appraisal Request | Mississippi Land Bank</title>
+  <meta name="description" content="Appraisal Request form" />
+
+  <!--
+    Notes:
+    - This is a standalone HTML/CSS implementation that recreates the key form elements.
+    - Replace the CSS variables under :root with official MSLANDBANK.com brand tokens if you have them.
+    - Hook up the <form> action/method and server-side processing as needed.
+  -->
+
+  <style>
+    :root {
+      /* Brand-like tokens (adjust to match MSLANDBANK.com precisely) */
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #d7dee8;
+      --focus: #2563eb;
+      --primary: #0b3a6a;     /* deep blue */
+      --primary-2: #0f4c8a;   /* hover */
+      --accent: #0ea5e9;      /* light blue */
+      --danger: #b91c1c;
+
+      --radius: 14px;
+      --shadow: 0 10px 25px rgba(2, 8, 23, 0.08);
+      --shadow-sm: 0 6px 18px rgba(2, 8, 23, 0.06);
+
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(14, 165, 233, 0.10), transparent 60%),
+                  radial-gradient(1000px 700px at 90% 20%, rgba(11, 58, 106, 0.10), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px;
+    }
+
+    .card {
+      width: min(980px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 22px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, rgba(11, 58, 106, 0.06), transparent);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .logo::after {
+      content: "ML";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      font-size: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0.2px;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(11, 58, 106, 0.18);
+      color: var(--primary);
+      background: rgba(11, 58, 106, 0.06);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14);
+    }
+
+    form {
+      padding: 22px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 840px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .req {
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #94a3b8;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .money-wrap {
+      position: relative;
+    }
+
+    .money-prefix {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .money-wrap input {
+      padding-left: 28px;
+    }
+
+    .upload {
+      border: 1px dashed rgba(11, 58, 106, 0.35);
+      background: rgba(11, 58, 106, 0.04);
+      padding: 14px;
+      border-radius: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .upload input[type="file"] {
+      width: 100%;
+      font-size: 14px;
+    }
+
+    .actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.05s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-2);
+    }
+
+    .btn-ghost {
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(15, 23, 42, 0.03);
+    }
+
+    .foot {
+      padding: 14px 22px 20px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .foot a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .foot a:hover {
+      text-decoration: underline;
+    }
+
+    /* Accessible error styles (if you wire JS validation) */
+    .error {
+      border-color: rgba(185, 28, 28, 0.65) !important;
+      box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.14) !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <main class="card" role="main">
+      <div class="header">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Appraisal Request</h1>
+            <p class="subtitle">Mississippi Land Bank</p>
+          </div>
+        </div>
+        <div class="status-chip" title="Request status (default)">
+          <span class="dot" aria-hidden="true"></span>
+          <span>New request</span>
+        </div>
+      </div>
+
+      <form id="appraisal-request" action="#" method="post" enctype="multipart/form-data">
+        <div class="grid">
+          <div class="field">
+            <label for="borrowerName">Borrower Name <span class="req" aria-hidden="true">*</span></label>
+            <input
+              id="borrowerName"
+              name="borrowerName"
+              type="text"
+              placeholder="Enter borrower name"
+              autocomplete="name"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="county">County</label>
+            <input id="county" name="county" type="text" placeholder="Enter county" />
+          </div>
+
+          <div class="field">
+            <label for="loanAmount">Loan Amount <span class="req" aria-hidden="true">*</span></label>
+            <div class="money-wrap">
+              <span class="money-prefix" aria-hidden="true">$</span>
+              <input
+                id="loanAmount"
+                name="loanAmount"
+                type="number"
+                inputmode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div class="hint">Numbers only (e.g., 80800.00)</div>
+          </div>
+
+          <div class="field">
+            <label for="estimatedClosingDate">Estimated Closing Date</label>
+            <input id="estimatedClosingDate" name="estimatedClosingDate" type="date" />
+          </div>
+
+          <div class="field">
+            <label for="loanNumber">Loan Number</label>
+            <input id="loanNumber" name="loanNumber" type="text" placeholder="Enter loan number" />
+          </div>
+
+          <div class="field">
+            <label for="appraisalStatus">Appraisal Status</label>
+            <select id="appraisalStatus" name="appraisalStatus">
+              <option value="" selected>Select a status</option>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          <div class="field span-2">
+            <label for="appraisalComments">Appraisal Comments</label>
+            <textarea
+              id="appraisalComments"
+              name="appraisalComments"
+              placeholder="Add any notes for the appraiser (equipment details, serial numbers, invoices, etc.)"
+            ></textarea>
+          </div>
+
+          <div class="field span-2">
+            <label for="attachments">Attachments</label>
+            <div class="upload">
+              <input id="attachments" name="attachments" type="file" multiple />
+              <div class="hint">Upload invoices, photos, or supporting docs. You may select multiple files.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-ghost" type="reset">Cancel</button>
+          <button class="btn-primary" type="submit">Submit</button>
+        </div>
+      </form>
+
+      <div class="foot" role="contentinfo">
+        <span>© <span id="year"></span> Mississippi Land Bank</span>
+        <span>
+          <a href="https://mslandbank.com" target="_blank" rel="noreferrer">mslandbank.com</a>
+        </span>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Tiny progressive enhancement only (safe to remove)
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Example hook: prevent default submit for demo pages
+    // Remove this in production.
+    document.getElementById('appraisal-request').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Submitted (demo). Wire up your backend endpoint to process this request.');
+    });
+  </script>
+</body>
+</html>
