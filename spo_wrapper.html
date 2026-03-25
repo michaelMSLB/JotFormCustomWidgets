@@ -1,1 +1,122 @@
-<h1>Hello michael.  </h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JotForm SPO Wrapper</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: transparent;
+      overflow-x: hidden;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    #form-host {
+      width: 100%;
+      min-height: 320px;
+    }
+
+    .error {
+      color: #8a1c1c;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="form-host"></div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var formUrl = params.get("formUrl") || "";
+      var parentOrigin = params.get("parentOrigin") || "*";
+      var token = params.get("token") || "";
+      var host = document.getElementById("form-host");
+
+      function postMessageToParent(type, payload) {
+        window.parent.postMessage(
+          Object.assign({ type: type, token: token }, payload || {}),
+          parentOrigin
+        );
+      }
+
+      function renderError(message) {
+        host.innerHTML = '<div class="error">' + message + "</div>";
+        postMessageToParent("sal-jotform-error", { message: message });
+      }
+
+      function sendHeight() {
+        var body = document.body;
+        var html = document.documentElement;
+        var height = Math.max(
+          body ? body.scrollHeight : 0,
+          body ? body.offsetHeight : 0,
+          html ? html.clientHeight : 0,
+          html ? html.scrollHeight : 0,
+          html ? html.offsetHeight : 0
+        );
+
+        postMessageToParent("sal-jotform-resize", { height: height + 16 });
+      }
+
+      function isAllowedFormUrl(value) {
+        try {
+          var url = new URL(value);
+          return (
+            url.protocol === "https:" &&
+            /(^|\.)jotform\.com$/i.test(url.hostname) &&
+            /^\/jsform\/[a-z0-9_-]+\/?$/i.test(url.pathname)
+          );
+        } catch (error) {
+          return false;
+        }
+      }
+
+      if (!isAllowedFormUrl(formUrl)) {
+        renderError("Invalid or unapproved JotForm URL.");
+        return;
+      }
+
+      var observer = new ResizeObserver(function () {
+        sendHeight();
+      });
+
+      observer.observe(document.body);
+      observer.observe(document.documentElement);
+
+      var mutationObserver = new MutationObserver(function () {
+        window.requestAnimationFrame(sendHeight);
+      });
+
+      mutationObserver.observe(document.body, {
+        attributes: true,
+        childList: true,
+        subtree: true
+      });
+
+      window.addEventListener("load", sendHeight);
+      window.setInterval(sendHeight, 1000);
+
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = formUrl;
+      script.async = true;
+      script.onload = function () {
+        window.setTimeout(sendHeight, 150);
+        window.setTimeout(sendHeight, 600);
+        window.setTimeout(sendHeight, 1200);
+      };
+      script.onerror = function () {
+        renderError("The JotForm script could not be loaded.");
+      };
+
+      host.appendChild(script);
+    })();
+  </script>
+</body>
+</html>
