@@ -952,18 +952,47 @@
     }
 
     function getFieldSyncMap(data) {
+      var summary = [
+        { key: 'totalReceived', value: numberToFixedString(data.TotalReceived) },
+        { key: 'totalApplied', value: numberToFixedString(data.TotalApplied) },
+        { key: 'difference', value: numberToFixedString(data.Difference) },
+        { key: 'amountBalanced', value: data.AmountBalanced },
+        { key: 'validationPassed', value: data.ValidationPassed },
+        { key: 'readyToSubmit', value: data.ReadyToSubmit },
+        { key: 'issueCount', value: String(data.IssueCount) },
+        { key: 'paymentCount', value: String(data.TransactionCount) },
+        { key: 'loanAppliedCount', value: String(data.LoanAppliedCount) },
+        { key: 'uniqueBorrowersCsv', value: data.UniqueBorrowersCSV },
+        { key: 'uniqueLoanNumbersCsv', value: data.UniqueLoanNumbersCSV }
+      ];
+
       return [
-        { qid: '25', name: 'totalReceived', value: numberToFixedString(data.TotalReceived) },
-        { qid: '26', name: 'totalApplied', value: numberToFixedString(data.TotalApplied) },
-        { qid: '27', name: 'difference', value: numberToFixedString(data.Difference) },
-        { qid: '28', name: 'amountBalanced', value: data.AmountBalanced },
-        { qid: '29', name: 'validationPassed', value: data.ValidationPassed },
-        { qid: '30', name: 'readyTo', value: data.ReadyToSubmit },
-        { qid: '31', name: 'issueCount', value: String(data.IssueCount) },
-        { qid: '32', name: 'paymentCount', value: String(data.TransactionCount) },
-        { qid: '33', name: 'loanApplied', value: String(data.LoanAppliedCount) },
-        { qid: '34', name: 'uniqueBorrowers', value: data.UniqueBorrowersCSV },
-        { qid: '35', name: 'uniqueLoan', value: data.UniqueLoanNumbersCSV }
+        // Hidden integration/reporting fields.
+        { qid: '25', name: 'totalReceived', value: summary[0].value, readonly: false },
+        { qid: '26', name: 'totalApplied', value: summary[1].value, readonly: false },
+        { qid: '27', name: 'difference', value: summary[2].value, readonly: false },
+        { qid: '28', name: 'amountBalanced', value: summary[3].value, readonly: false },
+        { qid: '29', name: 'validationPassed', value: summary[4].value, readonly: false },
+        { qid: '30', name: 'readyTo', value: summary[5].value, readonly: false },
+        { qid: '31', name: 'issueCount', value: summary[6].value, readonly: false },
+        { qid: '32', name: 'paymentCount', value: summary[7].value, readonly: false },
+        { qid: '33', name: 'loanApplied', value: summary[8].value, readonly: false },
+        { qid: '34', name: 'uniqueBorrowers', value: summary[9].value, readonly: false },
+        { qid: '35', name: 'uniqueLoan', value: summary[10].value, readonly: false },
+
+        // Visible confirmation page fields. These mirror the hidden fields so users can confirm
+        // that summary values are actually being passed into ordinary Jotform inputs.
+        { qid: '37', name: 'confirmTotal', value: summary[0].value, readonly: true },
+        { qid: '38', name: 'confirmTotal38', value: summary[1].value, readonly: true },
+        { qid: '39', name: 'confirmDifference', value: summary[2].value, readonly: true },
+        { qid: '40', name: 'confirmAmount', value: summary[3].value, readonly: true },
+        { qid: '41', name: 'confirmValidation', value: summary[4].value, readonly: true },
+        { qid: '42', name: 'confirmReady', value: summary[5].value, readonly: true },
+        { qid: '43', name: 'confirmIssue', value: summary[6].value, readonly: true },
+        { qid: '44', name: 'confirmPayment', value: summary[7].value, readonly: true },
+        { qid: '45', name: 'confirmLoan', value: summary[8].value, readonly: true },
+        { qid: '46', name: 'confirmUnique', value: summary[9].value, readonly: true },
+        { qid: '47', name: 'confirmUnique47', value: summary[10].value, readonly: true }
       ];
     }
 
@@ -973,9 +1002,14 @@
       return n.toFixed(2);
     }
 
-    function setNativeInputValue(input, value) {
+    function setNativeInputValue(input, value, makeReadonly) {
       if (!input) return false;
       var nextValue = value == null ? '' : String(value);
+      if (makeReadonly) {
+        try { input.readOnly = true; } catch (e) {}
+        try { input.setAttribute('readonly', 'readonly'); } catch (e) {}
+        try { input.setAttribute('aria-readonly', 'true'); } catch (e) {}
+      }
       if (input.value === nextValue) return true;
       input.value = nextValue;
       try { input.setAttribute('value', nextValue); } catch (e) {}
@@ -999,7 +1033,7 @@
               || doc.querySelector('[name="q' + field.qid + '_' + field.name + '"]')
               || doc.querySelector('[name="' + field.name + '"]')
               || doc.querySelector('[data-component="textbox"][id="input_' + field.qid + '"]');
-            setNativeInputValue(input, field.value);
+            setNativeInputValue(input, field.value, field.readonly);
           });
         }
       } catch (e) {}
