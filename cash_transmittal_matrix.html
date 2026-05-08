@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cash Transmittal Widget - Flat Payload v7</title>
+  <title>Cash Transmittal Widget - Flat Payload v10</title>
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <style>
     :root {
@@ -258,6 +258,16 @@
       cursor: pointer;
     }
 
+    .sync-status {
+      font-size: 12px;
+      color: #344054;
+      min-width: 180px;
+    }
+
+    .sync-status.ok { color: var(--good-text); font-weight: 700; }
+    .sync-status.warn { color: var(--warn-text); font-weight: 700; }
+    .sync-status.bad { color: var(--bad-text); font-weight: 700; }
+
     .resize-button:hover,
     .resize-button:focus {
       border-color: var(--focus);
@@ -352,7 +362,8 @@
       <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
       <div class="total-field total-errors hidden" id="errorField" role="button" tabindex="0" aria-controls="validationSummary">Issues: <span id="errorCount">0</span></div>
       <div class="total-field total-ready not-ready" id="readyField" role="button" tabindex="0" aria-controls="validationSummary">Ready: <span id="readyStatus">No</span></div>
-      <button type="button" class="resize-button" id="resizeButton" title="Fit the widget height to its contents">Fit view</button>
+      <button type="button" class="resize-button sync-button" id="resizeButton" title="Push calculated summary values into Jotform fields and refresh the widget answer">Confirm and Sync</button>
+      <span class="sync-status" id="syncStatus" aria-live="polite"></span>
       <div class="validation-summary not-ready" id="validationSummary" role="tooltip">
         Ready to submit: No
         <ul id="validationList"><li>Enter at least one payment row.</li></ul>
@@ -373,6 +384,7 @@
     var validationSummary = document.getElementById('validationSummary');
     var validationList = document.getElementById('validationList');
     var resizeButton = document.getElementById('resizeButton');
+    var syncStatus = document.getElementById('syncStatus');
 
     function toggleValidationTooltip(event) {
       if (event) {
@@ -405,7 +417,7 @@
 
     if (resizeButton) {
       resizeButton.addEventListener('click', function() {
-        requestWidgetResize(true);
+        confirmAndSyncSummary();
       });
     }
 
@@ -1010,36 +1022,80 @@
         try { input.setAttribute('readonly', 'readonly'); } catch (e) {}
         try { input.setAttribute('aria-readonly', 'true'); } catch (e) {}
       }
-      if (input.value === nextValue) return true;
-      input.value = nextValue;
+
+      // Use the native setter where available. This is more reliable with modern form runtimes
+      // that watch property changes rather than raw attributes.
+      try {
+        var proto = input.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+        var descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+        if (descriptor && descriptor.set) {
+          descriptor.set.call(input, nextValue);
+        } else {
+          input.value = nextValue;
+        }
+      } catch (e) {
+        input.value = nextValue;
+      }
+
       try { input.setAttribute('value', nextValue); } catch (e) {}
       try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
       try { input.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
       try { input.dispatchEvent(new Event('blur', { bubbles: true })); } catch (e) {}
-      return true;
+      return input.value === nextValue || input.getAttribute('value') === nextValue;
+    }
+
+    function findParentJotformInput(doc, field) {
+      if (!doc) return null;
+      var selectors = [
+        '#input_' + field.qid,
+        '#cid_' + field.qid + ' input',
+        '#id_' + field.qid + ' input',
+        '[name="q' + field.qid + '_' + field.name + '"]',
+        '[name="' + field.name + '"]',
+        '[data-component="textbox"][id="input_' + field.qid + '"]'
+      ];
+      for (var i = 0; i < selectors.length; i++) {
+        try {
+          var found = doc.querySelector(selectors[i]);
+          if (found) return found;
+        } catch (e) {}
+      }
+      return null;
     }
 
     function syncHiddenSummaryFields(data) {
       var fields = getFieldSyncMap(data);
+      var result = {
+        attempted: fields.length,
+        found: 0,
+        set: 0,
+        parentAccessible: false,
+        missing: []
+      };
 
-      // Primary strategy: direct same-origin parent DOM update. This works when Jotform allows
-      // the widget iframe to reach the host form. If the iframe is cross-origin/sandboxed,
-      // the catch block prevents errors and the widget payload remains the source of truth.
+      // Primary strategy: direct parent DOM update. If the widget iframe is sandboxed or
+      // cross-origin, this will be blocked; the function returns that status instead of failing.
       try {
         var doc = window.parent && window.parent.document;
         if (doc) {
+          result.parentAccessible = true;
           fields.forEach(function(field) {
-            var input = doc.getElementById('input_' + field.qid)
-              || doc.querySelector('[name="q' + field.qid + '_' + field.name + '"]')
-              || doc.querySelector('[name="' + field.name + '"]')
-              || doc.querySelector('[data-component="textbox"][id="input_' + field.qid + '"]');
-            setNativeInputValue(input, field.value, field.readonly);
+            var input = findParentJotformInput(doc, field);
+            if (input) {
+              result.found += 1;
+              if (setNativeInputValue(input, field.value, field.readonly)) result.set += 1;
+            } else {
+              result.missing.push(field.name + ' (#' + field.qid + ')');
+            }
           });
         }
-      } catch (e) {}
+      } catch (e) {
+        result.parentAccessible = false;
+      }
 
-      // Secondary strategy: postMessage for any parent listener/Jotform runtime that honors it.
-      // Harmless if ignored.
+      // Secondary strategy: postMessage. This only works if the parent page has a listener
+      // that honors these messages. Native Jotform pages generally do not expose a documented
+      // listener for custom widgets to set sibling fields, so this is best-effort only.
       try {
         fields.forEach(function(field) {
           window.parent.postMessage({
@@ -1051,6 +1107,38 @@
           }, '*');
         });
       } catch (e) {}
+
+      return result;
+    }
+
+    function setSyncStatus(message, statusClass) {
+      if (!syncStatus) return;
+      syncStatus.textContent = message;
+      syncStatus.className = 'sync-status ' + (statusClass || '');
+    }
+
+    function confirmAndSyncSummary() {
+      var data = collectData();
+      var syncResult = syncHiddenSummaryFields(data);
+      sendDataToJotForm();
+      requestWidgetResize(true);
+
+      if (!data.ReadyToSubmit || data.ReadyToSubmit !== 'Yes') {
+        setSyncStatus('Not ready - review issues.', 'bad');
+        validationSummary.classList.add('is-visible');
+        return;
+      }
+
+      if (!syncResult.parentAccessible) {
+        setSyncStatus('Widget payload ready. Jotform field sync is blocked.', 'warn');
+        return;
+      }
+
+      if (syncResult.set > 0) {
+        setSyncStatus('Synced ' + syncResult.set + ' field(s). Continue to confirmation.', 'ok');
+      } else {
+        setSyncStatus('No Jotform fields were reachable. Payload is ready only.', 'warn');
+      }
     }
 
     function collectData() {
