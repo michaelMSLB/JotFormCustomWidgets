@@ -48,12 +48,6 @@
       overflow: visible;
     }
 
-    .helper-text {
-      font-size: 12px;
-      color: #475467;
-      line-height: 1.35;
-      margin-bottom: 2px;
-    }
 
     .table-wrapper {
       overflow-x: auto;
@@ -120,25 +114,6 @@
       background: #f9fafb;
     }
 
-    .row-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      color: #344054;
-      margin-bottom: 3px;
-      min-height: 13px;
-      line-height: 13px;
-    }
-
-    .row-label-spacer {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      margin-bottom: 3px;
-      min-height: 13px;
-      line-height: 13px;
-      visibility: hidden;
-    }
 
     .row-hint {
       display: none;
@@ -176,13 +151,6 @@
       gap: 4px;
     }
 
-    .loan-row-label {
-      grid-column: 1 / -1;
-      font-size: 11px;
-      font-weight: 700;
-      color: #475467;
-      margin-top: 2px;
-    }
 
     .loan-btn {
       width: 24px;
@@ -273,25 +241,64 @@
     .total-ready.not-ready { background: var(--bad-bg); color: var(--bad-text); }
     .hidden { display: none !important; }
 
+    .total-errors,
+    .total-ready {
+      cursor: help;
+      user-select: none;
+    }
+
+    .total-errors:focus,
+    .total-ready:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.18);
+    }
+
     .validation-summary {
+      display: none;
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      width: min(520px, calc(100vw - 40px));
+      max-height: 240px;
+      overflow: auto;
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 8px 10px;
       font-size: 12px;
-      background: #f9fafb;
+      line-height: 1.35;
+      background: #ffffff;
       color: #344054;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+      z-index: 50;
+    }
+
+    .validation-summary::after {
+      content: "";
+      position: absolute;
+      right: 28px;
+      bottom: -7px;
+      width: 12px;
+      height: 12px;
+      background: inherit;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transform: rotate(45deg);
     }
 
     .validation-summary.ready {
-      background: var(--good-bg);
-      color: var(--good-text);
       border-color: #86efac;
     }
 
     .validation-summary.not-ready {
-      background: var(--warn-bg);
-      color: var(--warn-text);
       border-color: #fcd34d;
+    }
+
+    .total-errors:hover ~ .validation-summary,
+    .total-ready:hover ~ .validation-summary,
+    .total-errors:focus ~ .validation-summary,
+    .total-ready:focus ~ .validation-summary,
+    .validation-summary.is-visible {
+      display: block;
     }
 
     .validation-summary ul {
@@ -304,10 +311,6 @@
 </head>
 <body>
   <div id="main">
-    <div class="helper-text">
-      Enter one payment per row. Add one or more loan applications under that payment. Type a double quote (&quot;) in Borrower or Remitter to copy that value from the payment above. Each payment and the overall transmittal must balance before submission.
-    </div>
-
     <div class="table-wrapper">
       <table class="matrix-table" aria-label="Cash Transmittal">
         <thead>
@@ -329,13 +332,12 @@
       <div class="total-field total-received">Total Received: <span id="totalReceived">$0.00</span></div>
       <div class="total-field total-allocated">Total Applied: <span id="totalAllocated">$0.00</span></div>
       <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
-      <div class="total-field total-errors hidden" id="errorField">Issues: <span id="errorCount">0</span></div>
-      <div class="total-field total-ready not-ready" id="readyField">Ready: <span id="readyStatus">No</span></div>
-    </div>
-
-    <div class="validation-summary not-ready" id="validationSummary">
-      Ready to submit: No
-      <ul id="validationList"><li>Enter at least one payment row.</li></ul>
+      <div class="total-field total-errors hidden" id="errorField" role="button" tabindex="0" aria-controls="validationSummary">Issues: <span id="errorCount">0</span></div>
+      <div class="total-field total-ready not-ready" id="readyField" role="button" tabindex="0" aria-controls="validationSummary">Ready: <span id="readyStatus">No</span></div>
+      <div class="validation-summary not-ready" id="validationSummary" role="tooltip">
+        Ready to submit: No
+        <ul id="validationList"><li>Enter at least one payment row.</li></ul>
+      </div>
     </div>
   </div>
 
@@ -351,6 +353,30 @@
     var readyStatusEl = document.getElementById('readyStatus');
     var validationSummary = document.getElementById('validationSummary');
     var validationList = document.getElementById('validationList');
+
+    function toggleValidationTooltip(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      validationSummary.classList.toggle('is-visible');
+    }
+
+    function hideValidationTooltip(event) {
+      if (!event) return;
+      if (validationSummary.contains(event.target) || readyField.contains(event.target) || errorField.contains(event.target)) return;
+      validationSummary.classList.remove('is-visible');
+    }
+
+    [readyField, errorField].forEach(function(el) {
+      el.addEventListener('click', toggleValidationTooltip);
+      el.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') toggleValidationTooltip(event);
+        if (event.key === 'Escape') validationSummary.classList.remove('is-visible');
+      });
+    });
+
+    document.addEventListener('click', hideValidationTooltip);
 
     var initialized = false;
     var sendTimer = null;
@@ -463,28 +489,11 @@
       return select;
     }
 
-    function makeLabel(text, className) {
-      var label = document.createElement('span');
-      label.className = className || 'row-label';
-      label.textContent = text;
-      return label;
-    }
-
-    function makeSpacerLabel() {
-      var label = document.createElement('span');
-      label.className = 'row-label-spacer';
-      label.setAttribute('aria-hidden', 'true');
-      label.textContent = 'spacer';
-      return label;
-    }
 
     function createLoanRow(container, isFirst, loanAppliedId) {
       var loanRow = document.createElement('div');
       loanRow.className = 'loan-row';
       loanRow.setAttribute('data-loan-applied-id', loanAppliedId || generateUUID());
-
-      var loanLabel = makeLabel('Loan application', 'loan-row-label');
-      loanRow.appendChild(loanLabel);
 
       var loanNumInput = createCellInput('text', 'loanNumber', placeholders.loanNumber);
       loanNumInput.inputMode = 'text';
@@ -611,7 +620,6 @@
       row.setAttribute('data-transaction-id', transactionId);
 
       var borrowerCell = document.createElement('td');
-      borrowerCell.appendChild(makeLabel('Payment'));
       borrowerCell.appendChild(createCellInput('text', 'borrower', placeholders.borrower));
       var hint = document.createElement('div');
       hint.className = 'row-hint';
@@ -620,23 +628,19 @@
       row.appendChild(borrowerCell);
 
       var remitterCell = document.createElement('td');
-      remitterCell.appendChild(makeSpacerLabel());
       remitterCell.appendChild(createCellInput('text', 'remitter', placeholders.remitter));
       row.appendChild(remitterCell);
 
       var paymentTypeCell = document.createElement('td');
-      paymentTypeCell.appendChild(makeSpacerLabel());
       paymentTypeCell.appendChild(createSelect('paymentType', paymentTypes));
       row.appendChild(paymentTypeCell);
 
       var amountCell = document.createElement('td');
-      amountCell.appendChild(makeSpacerLabel());
       amountCell.appendChild(createCellInput('number', 'amountReceived', placeholders.amount));
       row.appendChild(amountCell);
 
       var dateCell = document.createElement('td');
       var dateInput = createCellInput('date', 'effectiveDate');
-      dateCell.appendChild(makeSpacerLabel());
       dateInput.value = getTodayDate();
       dateCell.appendChild(dateInput);
       row.appendChild(dateCell);
@@ -728,21 +732,7 @@
     }
 
     function renumberRows() {
-      var rows = Array.prototype.slice.call(matrixBody.querySelectorAll('tr'));
-      var paymentNumber = 0;
-      rows.forEach(function(row) {
-        var label = row.querySelector('.row-label');
-        if (!isRowEmpty(row)) {
-          paymentNumber += 1;
-          if (label) label.textContent = 'Payment ' + paymentNumber;
-        } else if (label) {
-          label.textContent = 'New payment';
-        }
-        var loanLabels = row.querySelectorAll('.loan-row-label');
-        loanLabels.forEach(function(loanLabel, index) {
-          loanLabel.textContent = 'Loan application ' + (index + 1);
-        });
-      });
+      // Payment and loan application labels were removed to keep production input alignment stable.
     }
 
     function handleInputChange(event) {
@@ -791,8 +781,13 @@
       if (readyToSubmit) {
         validationSummary.firstChild.nodeValue = 'Ready to submit: Yes';
         validationList.innerHTML = '<li>All amount and field checks passed.</li>';
+        readyField.setAttribute('title', 'All amount and field checks passed.');
+        errorField.setAttribute('title', 'No validation issues.');
       } else {
         validationSummary.firstChild.nodeValue = 'Ready to submit: No';
+        var issueText = issues.length ? issues.slice(0, 5).join(' | ') : 'Form is not ready.';
+        readyField.setAttribute('title', issueText);
+        errorField.setAttribute('title', issueText);
         validationList.innerHTML = '';
         issues.slice(0, 8).forEach(function(issue) {
           var li = document.createElement('li');
