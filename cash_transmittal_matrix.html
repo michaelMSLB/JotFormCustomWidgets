@@ -935,10 +935,96 @@
       };
     }
 
+
+    function uniqueSortedCsv(values) {
+      var seen = Object.create(null);
+      var result = [];
+      values.forEach(function(value) {
+        var clean = String(value || '').trim();
+        if (!clean) return;
+        var key = clean.toLowerCase();
+        if (seen[key]) return;
+        seen[key] = true;
+        result.push(clean);
+      });
+      result.sort(function(a, b) { return a.localeCompare(b); });
+      return result.join(', ');
+    }
+
+    function getFieldSyncMap(data) {
+      return [
+        { qid: '25', name: 'totalReceived', value: numberToFixedString(data.TotalReceived) },
+        { qid: '26', name: 'totalApplied', value: numberToFixedString(data.TotalApplied) },
+        { qid: '27', name: 'difference', value: numberToFixedString(data.Difference) },
+        { qid: '28', name: 'amountBalanced', value: data.AmountBalanced },
+        { qid: '29', name: 'validationPassed', value: data.ValidationPassed },
+        { qid: '30', name: 'readyTo', value: data.ReadyToSubmit },
+        { qid: '31', name: 'issueCount', value: String(data.IssueCount) },
+        { qid: '32', name: 'paymentCount', value: String(data.TransactionCount) },
+        { qid: '33', name: 'loanApplied', value: String(data.LoanAppliedCount) },
+        { qid: '34', name: 'uniqueBorrowers', value: data.UniqueBorrowersCSV },
+        { qid: '35', name: 'uniqueLoan', value: data.UniqueLoanNumbersCSV }
+      ];
+    }
+
+    function numberToFixedString(value) {
+      var n = Number(value);
+      if (!isFinite(n)) return '0.00';
+      return n.toFixed(2);
+    }
+
+    function setNativeInputValue(input, value) {
+      if (!input) return false;
+      var nextValue = value == null ? '' : String(value);
+      if (input.value === nextValue) return true;
+      input.value = nextValue;
+      try { input.setAttribute('value', nextValue); } catch (e) {}
+      try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
+      try { input.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+      try { input.dispatchEvent(new Event('blur', { bubbles: true })); } catch (e) {}
+      return true;
+    }
+
+    function syncHiddenSummaryFields(data) {
+      var fields = getFieldSyncMap(data);
+
+      // Primary strategy: direct same-origin parent DOM update. This works when Jotform allows
+      // the widget iframe to reach the host form. If the iframe is cross-origin/sandboxed,
+      // the catch block prevents errors and the widget payload remains the source of truth.
+      try {
+        var doc = window.parent && window.parent.document;
+        if (doc) {
+          fields.forEach(function(field) {
+            var input = doc.getElementById('input_' + field.qid)
+              || doc.querySelector('[name="q' + field.qid + '_' + field.name + '"]')
+              || doc.querySelector('[name="' + field.name + '"]')
+              || doc.querySelector('[data-component="textbox"][id="input_' + field.qid + '"]');
+            setNativeInputValue(input, field.value);
+          });
+        }
+      } catch (e) {}
+
+      // Secondary strategy: postMessage for any parent listener/Jotform runtime that honors it.
+      // Harmless if ignored.
+      try {
+        fields.forEach(function(field) {
+          window.parent.postMessage({
+            source: 'cash-transmittal-widget',
+            action: 'setFieldValue',
+            qid: field.qid,
+            name: field.name,
+            value: field.value
+          }, '*');
+        });
+      } catch (e) {}
+    }
+
     function collectData() {
       var now = new Date().toISOString();
       var flatRows = [];
       var transactionRows = [];
+      var borrowerValues = [];
+      var loanNumberValues = [];
       var totals = updateTotals();
       var populatedRows = Array.prototype.filter.call(matrixBody.querySelectorAll('tr'), function(row) {
         return !isRowEmpty(row);
@@ -947,6 +1033,7 @@
       populatedRows.forEach(function(row, txIndex) {
         var transactionId = row.getAttribute('data-transaction-id');
         var borrowerName = row.querySelector('[name="borrower"]').value.trim();
+        if (borrowerName) borrowerValues.push(borrowerName);
         var remitterName = row.querySelector('[name="remitter"]').value.trim();
         var paymentType = row.querySelector('[name="paymentType"]').value;
         var amountReceived = centsToNumber(toCents(row.querySelector('[name="amountReceived"]').value));
@@ -999,7 +1086,9 @@
 
         loanRows.forEach(function(loanRow, loanIndex) {
           var loanNumberInput = loanRow.querySelector('[name="loanNumber"]');
-          var loanNumber = loanNumberInput.value.trim();
+          var loanNumber = normalizeLoanNumberValue(loanNumberInput.value.trim());
+          loanNumberInput.value = loanNumber;
+          if (loanNumber) loanNumberValues.push(loanNumber);
           var amountApplied = centsToNumber(toCents(loanRow.querySelector('[name="loanAmount"]').value));
           var loanComments = loanRow.querySelector('[name="loanComments"]').value.trim();
           var loanNumberValid = loanNumber === '' ? 'Blank' : (validateLoanNumber(loanNumberInput) ? 'ValidFormat' : 'InvalidFormat');
@@ -1040,7 +1129,10 @@
         IssueCount: totals.issueCount,
         Issues: totals.issues,
         TransactionCount: transactionRows.length,
+        PaymentCount: transactionRows.length,
         LoanAppliedCount: flatRows.filter(function(r) { return r.LoanApplied_ID; }).length,
+        UniqueBorrowersCSV: uniqueSortedCsv(borrowerValues),
+        UniqueLoanNumbersCSV: uniqueSortedCsv(loanNumberValues),
         Rows: flatRows,
         Transactions: transactionRows
       };
@@ -1095,6 +1187,8 @@
       }
       lines.push('Transactions: ' + data.TransactionCount);
       lines.push('Loan Applications: ' + data.LoanAppliedCount);
+      lines.push('Unique Borrowers CSV: ' + data.UniqueBorrowersCSV);
+      lines.push('Unique Loan Numbers CSV: ' + data.UniqueLoanNumbersCSV);
       lines.push('');
 
       data.Transactions.forEach(function(t) {
@@ -1140,6 +1234,10 @@
           validationPassed: data.ValidationPassed,
           readyToSubmit: data.ReadyToSubmit,
           issueCount: data.IssueCount,
+          paymentCount: data.PaymentCount,
+          loanAppliedCount: data.LoanAppliedCount,
+          uniqueBorrowersCSV: data.UniqueBorrowersCSV,
+          uniqueLoanNumbersCSV: data.UniqueLoanNumbersCSV,
           issues: data.Issues,
           text: generateTextSummary(data)
         })
@@ -1152,8 +1250,27 @@
     }
 
     function sendDataToJotForm() {
+      var data = collectData();
+      syncHiddenSummaryFields(data);
       if (typeof JFCustomWidget === 'undefined') return;
-      JFCustomWidget.sendData(getSubmitValue());
+      JFCustomWidget.sendData({
+        value: JSON.stringify({
+          schemaVersion: data.SchemaVersion,
+          flatPayload: data,
+          rows: data.Rows,
+          transactions: data.Transactions,
+          amountBalanced: data.AmountBalanced,
+          validationPassed: data.ValidationPassed,
+          readyToSubmit: data.ReadyToSubmit,
+          issueCount: data.IssueCount,
+          paymentCount: data.PaymentCount,
+          loanAppliedCount: data.LoanAppliedCount,
+          uniqueBorrowersCSV: data.UniqueBorrowersCSV,
+          uniqueLoanNumbersCSV: data.UniqueLoanNumbersCSV,
+          issues: data.Issues,
+          text: generateTextSummary(data)
+        })
+      });
     }
 
     var lastRequestedHeight = 0;
@@ -1271,6 +1388,7 @@
 
         JFCustomWidget.subscribe('submit', function() {
           var data = collectData();
+          syncHiddenSummaryFields(data);
           JFCustomWidget.sendSubmit({
             valid: data.ReadyToSubmit === 'Yes',
             value: getSubmitValue().value
