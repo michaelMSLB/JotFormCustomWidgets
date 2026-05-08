@@ -362,8 +362,6 @@
       <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
       <div class="total-field total-errors hidden" id="errorField" role="button" tabindex="0" aria-controls="validationSummary">Issues: <span id="errorCount">0</span></div>
       <div class="total-field total-ready not-ready" id="readyField" role="button" tabindex="0" aria-controls="validationSummary">Ready: <span id="readyStatus">No</span></div>
-      <button type="button" class="resize-button sync-button" id="resizeButton" title="Push calculated summary values into Jotform fields and refresh the widget answer">Confirm and Sync</button>
-      <span class="sync-status" id="syncStatus" aria-live="polite"></span>
       <div class="validation-summary not-ready" id="validationSummary" role="tooltip">
         Ready to submit: No
         <ul id="validationList"><li>Enter at least one payment row.</li></ul>
@@ -383,8 +381,6 @@
     var readyStatusEl = document.getElementById('readyStatus');
     var validationSummary = document.getElementById('validationSummary');
     var validationList = document.getElementById('validationList');
-    var resizeButton = document.getElementById('resizeButton');
-    var syncStatus = document.getElementById('syncStatus');
 
     function toggleValidationTooltip(event) {
       if (event) {
@@ -415,11 +411,6 @@
     var resizeTimer = null;
     var transmittalId = generateUUID();
 
-    if (resizeButton) {
-      resizeButton.addEventListener('click', function() {
-        confirmAndSyncSummary();
-      });
-    }
 
     var defaultColumnHeaders = {
       borrower: 'Borrower Name',
@@ -1112,9 +1103,7 @@
     }
 
     function setSyncStatus(message, statusClass) {
-      if (!syncStatus) return;
-      syncStatus.textContent = message;
-      syncStatus.className = 'sync-status ' + (statusClass || '');
+      return;
     }
 
     function confirmAndSyncSummary() {
