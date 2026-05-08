@@ -1217,7 +1217,7 @@
         var loanRows = getLoanRowsWithContent(row);
 
         transactionRows.push({
-          SchemaVersion: '3.1-flat',
+          SchemaVersion: '3.2-flat',
           Transmittal_ID: transmittalId,
           Transaction_ID: transactionId,
           Transaction_RowIndex: txIndex + 1,
@@ -1291,7 +1291,7 @@
       });
 
       return {
-        SchemaVersion: '3.1-flat',
+        SchemaVersion: '3.2-flat',
         Transmittal_ID: transmittalId,
         SubmittedAt: now,
         TotalReceived: totals.totalReceived,
@@ -1317,7 +1317,7 @@
 
     function makeFlatRow(args) {
       return {
-        SchemaVersion: '3.1-flat',
+        SchemaVersion: '3.2-flat',
         Transmittal_ID: transmittalId,
         SubmittedAt: args.now,
         Transmittal_TotalReceived: args.totals.totalReceived,
@@ -1583,10 +1583,28 @@
 
         JFCustomWidget.subscribe('submit', function() {
           var data = collectData();
-          syncHiddenSummaryFields(data);
+          var submitValue = getSubmitValue().value;
+
+          // Hard stop: do not allow the Jotform submission to proceed unless
+          // the matrix/widget JSON has no balancing or validation errors.
+          var canSubmit = data.AmountBalanced === 'Yes' &&
+            data.ValidationPassed === 'Yes' &&
+            data.ReadyToSubmit === 'Yes' &&
+            Number(data.IssueCount || 0) === 0;
+
+          if (!canSubmit) {
+            validationSummary.classList.add('is-visible');
+            requestWidgetResize(true);
+            JFCustomWidget.sendSubmit({
+              valid: false,
+              value: submitValue
+            });
+            return;
+          }
+
           JFCustomWidget.sendSubmit({
-            valid: data.ReadyToSubmit === 'Yes',
-            value: getSubmitValue().value
+            valid: true,
+            value: submitValue
           });
         });
       });
