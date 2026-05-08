@@ -459,6 +459,9 @@
       loanRow.appendChild(loanLabel);
 
       var loanNumInput = createCellInput('text', 'loanNumber', placeholders.loanNumber);
+      loanNumInput.inputMode = 'text';
+      loanNumInput.pattern = '\\d{6,}(-\\d+)?';
+      loanNumInput.title = 'Enter at least 6 digits. A dash and trailing digits are allowed, e.g. 123456-00.';
       loanNumInput.addEventListener('input', function() {
         validateLoanNumber(loanNumInput);
       });
@@ -509,13 +512,29 @@
       return loanRow;
     }
 
+    function normalizeLoanNumberValue(value) {
+      return String(value || '')
+        .trim()
+        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, '-');
+    }
+
+    function isLoanNumberFormatValid(value) {
+      // Required format: at least 6 digits, optionally followed by one dash and one or more digits.
+      // Valid: 123456, 1234567, 123456-00, 1234567-001
+      // Invalid: 12345, 123456-, 123-456, 123456.00, ABC123456, 123456-A1
+      return /^\d{6,}(?:-\d+)?$/.test(normalizeLoanNumberValue(value));
+    }
+
     function validateLoanNumber(input) {
-      var value = input.value.trim();
+      var value = normalizeLoanNumberValue(input.value);
+      if (input.value !== value) input.value = value;
+
       if (value === '') {
         input.classList.remove('loan-invalid');
         return true;
       }
-      var isValid = /^\d{6,}(?:-\d+)?$/.test(value);
+
+      var isValid = isLoanNumberFormatValid(value);
       input.classList.toggle('loan-invalid', !isValid);
       return isValid;
     }
@@ -719,10 +738,11 @@
 
     function getLoanRowsWithContent(row) {
       return Array.prototype.filter.call(row.querySelectorAll('.loan-row'), function(loanRow) {
-        var loanNumber = loanRow.querySelector('[name="loanNumber"]').value.trim();
+        var loanNumber = normalizeLoanNumberValue(loanRow.querySelector('[name="loanNumber"]').value);
         var loanAmount = loanRow.querySelector('[name="loanAmount"]').value;
         var comments = loanRow.querySelector('[name="loanComments"]').value.trim();
-        return loanNumber || loanAmount || comments;
+        // Treat a default/blank 0.00 amount as empty so the muted trailing row does not create issues.
+        return loanNumber || comments || toCents(loanAmount) > 0;
       });
     }
 
