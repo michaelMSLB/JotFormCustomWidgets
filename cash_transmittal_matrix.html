@@ -3,25 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cash Transmittal Widget - Flat Payload v10</title>
+  <title>Cash Transmittal Widget - Flat Payload v17</title>
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <style>
     :root {
-      --border: #d7deea;
-      --header: #344054;
+      /* Table/input colors intentionally kept neutral/original. */
+      --border: #dcdcdc;
+      --header: #4a5568;
       --header-text: #ffffff;
       --bg-alt: #f8fafc;
-      --bg-muted: #f3f4f6;
+      --bg-muted: #f8fafc;
       --focus: #2d6cdf;
-      --good-bg: #d1fae5;
-      --good-text: #065f46;
-      --warn-bg: #fef3c7;
-      --warn-text: #92400e;
-      --bad-bg: #fee2e2;
-      --bad-text: #991b1b;
-      --info-bg: #e0e7ff;
-      --info-text: #3730a3;
-      --muted-text: #667085;
+
+      /* Button/indicator colors from requested palette. */
+      --good-bg: #5aa428; /* forest-green-600 - vibrant with white text */
+      --good-text: #ffffff;
+      --warn-bg: #ecab13; /* tuscan-sun-500 */
+      --warn-text: #211803; /* tuscan-sun-950 */
+      --bad-bg: #a54427; /* fiery-terracotta-600 */
+      --bad-text: #ffffff;
+      --info-bg: #125087; /* deep-space-blue-700 */
+      --info-text: #ffffff;
+      --neutral-bg: #594a40; /* dust-grey-700 */
+      --neutral-text: #ffffff;
+      --muted-text: #64748b;
+      --surface: #ffffff;
+      --surface-tint: #e9f3fc; /* deep-space-blue-50 */
     }
 
     html,
@@ -36,7 +43,7 @@
       font-family: Arial, Helvetica, sans-serif;
       padding: 12px;
       color: #1a1a1a;
-      background: #ffffff;
+      background: var(--surface);
       box-sizing: border-box;
     }
 
@@ -166,10 +173,10 @@
       flex-shrink: 0;
     }
 
-    .loan-btn-add { background: #2d6cdf; color: #fff; }
-    .loan-btn-add:hover { background: #1e5bc6; }
-    .loan-btn-remove { background: #e55353; color: #fff; }
-    .loan-btn-remove:hover { background: #d43d3d; }
+    .loan-btn-add { background: var(--info-bg); color: var(--info-text); }
+    .loan-btn-add:hover { background: #186bb4; }
+    .loan-btn-remove { background: var(--bad-bg); color: var(--bad-text); }
+    .loan-btn-remove:hover { background: #7c331d; }
 
     .row-balance {
       margin-top: 5px;
@@ -207,8 +214,8 @@
       height: 13px;
     }
 
-    .action-btn-remove { background: #e55353; color: #fff; }
-    .action-btn-remove:hover { background: #d43d3d; }
+    .action-btn-remove { background: var(--bad-bg); color: var(--bad-text); }
+    .action-btn-remove:hover { background: #7c331d; }
     tr.is-empty .action-btn-remove { visibility: hidden; }
 
     .totals {
@@ -216,11 +223,11 @@
       justify-content: flex-end;
       gap: 10px;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: flex-start;
       position: sticky;
       bottom: 0;
       z-index: 3;
-      background: rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.97);
       padding: 6px 0 2px;
     }
 
@@ -229,7 +236,35 @@
       border-radius: 4px;
       font-weight: bold;
       font-size: 14px;
+      line-height: 1.25;
+      align-self: flex-start;
+      box-shadow: 0 1px 2px rgba(4, 19, 31, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.16);
     }
+
+    .received-total-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 178px;
+    }
+
+    .payment-type-breakdown {
+      display: grid;
+      grid-template-columns: auto auto;
+      column-gap: 10px;
+      row-gap: 2px;
+      padding-top: 4px;
+      margin-top: 2px;
+      border-top: 1px solid rgba(255, 255, 255, 0.45);
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 600;
+      opacity: 0.95;
+    }
+
+    .payment-type-breakdown .breakdown-label { text-align: left; }
+    .payment-type-breakdown .breakdown-value { text-align: right; font-variant-numeric: tabular-nums; }
 
     .total-received { background: var(--info-bg); color: var(--info-text); }
     .total-allocated { background: var(--good-bg); color: var(--good-text); }
@@ -249,8 +284,8 @@
 
     .resize-button {
       border: 1px solid var(--border);
-      background: #ffffff;
-      color: #344054;
+      background: var(--surface);
+      color: #3b312b;
       border-radius: 4px;
       padding: 7px 10px;
       font-size: 12px;
@@ -260,7 +295,7 @@
 
     .sync-status {
       font-size: 12px;
-      color: #344054;
+      color: #3b312b;
       min-width: 180px;
     }
 
@@ -272,13 +307,13 @@
     .resize-button:focus {
       border-color: var(--focus);
       outline: none;
-      box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.12);
+      box-shadow: 0 0 0 2px rgba(22, 135, 233, 0.16);
     }
 
     .total-errors:focus,
     .total-ready:focus {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.18);
+      box-shadow: 0 0 0 2px rgba(22, 135, 233, 0.20);
     }
 
     .validation-summary {
@@ -294,8 +329,8 @@
       padding: 8px 10px;
       font-size: 12px;
       line-height: 1.35;
-      background: #ffffff;
-      color: #344054;
+      background: var(--surface);
+      color: #3b312b;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
       z-index: 50;
     }
@@ -314,11 +349,11 @@
     }
 
     .validation-summary.ready {
-      border-color: #86efac;
+      border-color: var(--good-bg);
     }
 
     .validation-summary.not-ready {
-      border-color: #fcd34d;
+      border-color: var(--warn-bg);
     }
 
     .total-errors:hover ~ .validation-summary,
@@ -357,7 +392,14 @@
     </div>
 
     <div class="totals">
-      <div class="total-field total-received">Total Received: <span id="totalReceived">$0.00</span></div>
+      <div class="total-field total-received received-total-stack">
+        <div>Total Received: <span id="totalReceived">$0.00</span></div>
+        <div class="payment-type-breakdown" aria-label="Payment type totals">
+          <span class="breakdown-label">Checks</span><span class="breakdown-value" id="totalChecks">$0.00</span>
+          <span class="breakdown-label">Cash</span><span class="breakdown-value" id="totalCash">$0.00</span>
+          <span class="breakdown-label">Money Orders</span><span class="breakdown-value" id="totalMoneyOrders">$0.00</span>
+        </div>
+      </div>
       <div class="total-field total-allocated">Total Applied: <span id="totalAllocated">$0.00</span></div>
       <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
       <div class="total-field total-errors hidden" id="errorField" role="button" tabindex="0" aria-controls="validationSummary">Issues: <span id="errorCount">0</span></div>
@@ -372,6 +414,9 @@
   <script type="text/javascript">
     var matrixBody = document.getElementById('matrixBody');
     var totalReceivedEl = document.getElementById('totalReceived');
+    var totalChecksEl = document.getElementById('totalChecks');
+    var totalCashEl = document.getElementById('totalCash');
+    var totalMoneyOrdersEl = document.getElementById('totalMoneyOrders');
     var totalAllocatedEl = document.getElementById('totalAllocated');
     var totalDifferenceEl = document.getElementById('totalDifference');
     var differenceField = document.getElementById('differenceField');
@@ -421,7 +466,7 @@
       loanApplied: 'Loan Applied (Loan # / Amount / Comments)'
     };
 
-    var defaultPaymentTypes = ['Cash', 'Check', 'Money Order'];
+    var defaultPaymentTypes = ['Check', 'Cash', 'Money Order'];
 
     var defaultPlaceholders = {
       borrower: 'Borrower Name',
@@ -831,10 +876,17 @@
       }
     }
 
+    function normalizePaymentType(value) {
+      return String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, ' ');
+    }
+
     function updateTotals() {
       var rows = matrixBody.querySelectorAll('tr');
       var receivedCents = 0;
       var allocatedCents = 0;
+      var checkCents = 0;
+      var cashCents = 0;
+      var moneyOrderCents = 0;
       var issues = [];
       var transactionCount = 0;
       var loanAppliedCount = 0;
@@ -848,6 +900,10 @@
         var amountInput = row.querySelector('[name="amountReceived"]');
         var effectiveDateInput = row.querySelector('[name="effectiveDate"]');
         var rowReceivedCents = toCents(amountInput.value);
+        var paymentTypeKey = normalizePaymentType(row.querySelector('[name="paymentType"]').value);
+        if (paymentTypeKey === 'check') checkCents += rowReceivedCents;
+        else if (paymentTypeKey === 'cash') cashCents += rowReceivedCents;
+        else if (paymentTypeKey === 'money order' || paymentTypeKey === 'money orders') moneyOrderCents += rowReceivedCents;
         var rowAllocatedCents = getTransactionAllocationCents(row);
         var rowDifferenceCents = rowReceivedCents - rowAllocatedCents;
         var balanceEl = row.querySelector('.row-balance');
@@ -907,6 +963,9 @@
       readyToSubmit = amountBalanced && validationPassed;
 
       totalReceivedEl.textContent = formatCurrency(centsToNumber(receivedCents));
+      totalChecksEl.textContent = formatCurrency(centsToNumber(checkCents));
+      totalCashEl.textContent = formatCurrency(centsToNumber(cashCents));
+      totalMoneyOrdersEl.textContent = formatCurrency(centsToNumber(moneyOrderCents));
       totalAllocatedEl.textContent = formatCurrency(centsToNumber(allocatedCents));
 
       differenceField.classList.remove('balanced', 'over');
@@ -926,6 +985,9 @@
 
       return {
         totalReceived: centsToNumber(receivedCents),
+        totalChecks: centsToNumber(checkCents),
+        totalCash: centsToNumber(cashCents),
+        totalMoneyOrders: centsToNumber(moneyOrderCents),
         totalApplied: centsToNumber(allocatedCents),
         difference: centsToNumber(differenceCents),
         amountBalanced: amountBalanced ? 'Yes' : 'No',
@@ -1155,7 +1217,7 @@
         var loanRows = getLoanRowsWithContent(row);
 
         transactionRows.push({
-          SchemaVersion: '3.0-flat',
+          SchemaVersion: '3.1-flat',
           Transmittal_ID: transmittalId,
           Transaction_ID: transactionId,
           Transaction_RowIndex: txIndex + 1,
@@ -1163,6 +1225,7 @@
           RemitterName: remitterName,
           PaymentType: paymentType,
           AmountReceived: amountReceived,
+          PaymentTypeTotalCategory: normalizePaymentType(paymentType),
           EffectiveDate: effectiveDate,
           EffectiveToday: effectiveToday ? 'Yes' : 'No',
           TransactionAppliedTotal: transactionAppliedTotal,
@@ -1228,10 +1291,13 @@
       });
 
       return {
-        SchemaVersion: '3.0-flat',
+        SchemaVersion: '3.1-flat',
         Transmittal_ID: transmittalId,
         SubmittedAt: now,
         TotalReceived: totals.totalReceived,
+        TotalChecks: totals.totalChecks,
+        TotalCash: totals.totalCash,
+        TotalMoneyOrders: totals.totalMoneyOrders,
         TotalApplied: totals.totalApplied,
         Difference: totals.difference,
         AmountBalanced: totals.amountBalanced,
@@ -1251,10 +1317,13 @@
 
     function makeFlatRow(args) {
       return {
-        SchemaVersion: '3.0-flat',
+        SchemaVersion: '3.1-flat',
         Transmittal_ID: transmittalId,
         SubmittedAt: args.now,
         Transmittal_TotalReceived: args.totals.totalReceived,
+        Transmittal_TotalChecks: args.totals.totalChecks,
+        Transmittal_TotalCash: args.totals.totalCash,
+        Transmittal_TotalMoneyOrders: args.totals.totalMoneyOrders,
         Transmittal_TotalApplied: args.totals.totalApplied,
         Transmittal_Difference: args.totals.difference,
         Transmittal_AmountBalanced: args.totals.amountBalanced,
@@ -1287,6 +1356,9 @@
       lines.push('Transmittal ID: ' + data.Transmittal_ID);
       lines.push('Submitted: ' + data.SubmittedAt);
       lines.push('Total Received: ' + formatCurrency(data.TotalReceived));
+      lines.push('Total Checks: ' + formatCurrency(data.TotalChecks));
+      lines.push('Total Cash: ' + formatCurrency(data.TotalCash));
+      lines.push('Total Money Orders: ' + formatCurrency(data.TotalMoneyOrders));
       lines.push('Total Applied: ' + formatCurrency(data.TotalApplied));
       lines.push('Difference: ' + formatCurrency(data.Difference));
       lines.push('Amount Balanced: ' + data.AmountBalanced);
@@ -1341,6 +1413,12 @@
           flatPayload: data,
           rows: data.Rows,
           transactions: data.Transactions,
+          totalReceived: data.TotalReceived,
+          totalChecks: data.TotalChecks,
+          totalCash: data.TotalCash,
+          totalMoneyOrders: data.TotalMoneyOrders,
+          totalApplied: data.TotalApplied,
+          difference: data.Difference,
           amountBalanced: data.AmountBalanced,
           validationPassed: data.ValidationPassed,
           readyToSubmit: data.ReadyToSubmit,
@@ -1370,6 +1448,12 @@
           flatPayload: data,
           rows: data.Rows,
           transactions: data.Transactions,
+          totalReceived: data.TotalReceived,
+          totalChecks: data.TotalChecks,
+          totalCash: data.TotalCash,
+          totalMoneyOrders: data.TotalMoneyOrders,
+          totalApplied: data.TotalApplied,
+          difference: data.Difference,
           amountBalanced: data.AmountBalanced,
           validationPassed: data.ValidationPassed,
           readyToSubmit: data.ReadyToSubmit,
