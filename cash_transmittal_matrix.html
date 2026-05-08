@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cash Transmittal Widget - Flat Payload v5</title>
+  <title>Cash Transmittal Widget - Flat Payload v7</title>
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <style>
     :root {
@@ -247,6 +247,24 @@
       user-select: none;
     }
 
+    .resize-button {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #344054;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .resize-button:hover,
+    .resize-button:focus {
+      border-color: var(--focus);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.12);
+    }
+
     .total-errors:focus,
     .total-ready:focus {
       outline: none;
@@ -334,6 +352,7 @@
       <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
       <div class="total-field total-errors hidden" id="errorField" role="button" tabindex="0" aria-controls="validationSummary">Issues: <span id="errorCount">0</span></div>
       <div class="total-field total-ready not-ready" id="readyField" role="button" tabindex="0" aria-controls="validationSummary">Ready: <span id="readyStatus">No</span></div>
+      <button type="button" class="resize-button" id="resizeButton" title="Fit the widget height to its contents">Fit view</button>
       <div class="validation-summary not-ready" id="validationSummary" role="tooltip">
         Ready to submit: No
         <ul id="validationList"><li>Enter at least one payment row.</li></ul>
@@ -353,6 +372,7 @@
     var readyStatusEl = document.getElementById('readyStatus');
     var validationSummary = document.getElementById('validationSummary');
     var validationList = document.getElementById('validationList');
+    var resizeButton = document.getElementById('resizeButton');
 
     function toggleValidationTooltip(event) {
       if (event) {
@@ -382,6 +402,12 @@
     var sendTimer = null;
     var resizeTimer = null;
     var transmittalId = generateUUID();
+
+    if (resizeButton) {
+      resizeButton.addEventListener('click', function() {
+        requestWidgetResize(true);
+      });
+    }
 
     var defaultColumnHeaders = {
       borrower: 'Borrower Name',
@@ -1130,45 +1156,44 @@
       JFCustomWidget.sendData(getSubmitValue());
     }
 
+    var lastRequestedHeight = 0;
+    var lastResizeRequestAt = 0;
+
     function getWidgetHeight() {
       var main = document.getElementById('main');
-      var body = document.body;
-      var html = document.documentElement;
-      var heights = [
-        body.scrollHeight,
-        body.offsetHeight,
-        html ? html.scrollHeight : 0,
-        html ? html.offsetHeight : 0,
-        main ? main.scrollHeight + 24 : 0,
-        main ? main.offsetHeight + 24 : 0
-      ];
-      return Math.max.apply(null, heights.filter(function(h) { return h && h > 0; })) + 10;
+      if (!main) return 540;
+
+      // Important: measure the widget content only. Do not use body/html scrollHeight,
+      // because after Jotform resizes the iframe those values can reflect the iframe height
+      // itself, which creates a self-amplifying resize loop.
+      var rect = main.getBoundingClientRect();
+      var contentHeight = Math.max(main.scrollHeight, rect.height);
+      return Math.ceil(contentHeight + 28);
     }
 
-    function requestWidgetResize() {
+    function requestWidgetResize(force) {
       if (typeof JFCustomWidget === 'undefined') return;
       var height = getWidgetHeight();
-      document.body.style.minHeight = height + 'px';
+      var now = Date.now();
 
+      if (!force) {
+        if (Math.abs(height - lastRequestedHeight) < 8) return;
+        if (now - lastResizeRequestAt < 150) return;
+      }
+
+      lastRequestedHeight = height;
+      lastResizeRequestAt = now;
+
+      // Do not set body/html min-height here. That was the source of the production growth loop.
       try { JFCustomWidget.requestFrameResize({ height: height }); } catch (e) {}
       try { JFCustomWidget.requestFrameResize(height); } catch (e) {}
-      try { JFCustomWidget.requestFrameResize(); } catch (e) {}
-
-      if (window.parent && window.parent !== window) {
-        try {
-          window.parent.postMessage({ action: 'setHeight', height: height }, '*');
-          window.parent.postMessage({ type: 'setHeight', height: height }, '*');
-        } catch (e) {}
-      }
     }
 
     function notifyHeightSoon() {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function() {
-        requestWidgetResize();
-        setTimeout(requestWidgetResize, 100);
-        setTimeout(requestWidgetResize, 300);
-      }, 25);
+        requestWidgetResize(false);
+      }, 75);
     }
 
     function initializeWidget() {
@@ -1179,31 +1204,19 @@
       installResizeObservers();
       renumberRows();
       updateTotals();
-      notifyHeightSoon();
+      requestWidgetResize(true);
       sendDataToJotForm();
     }
 
     function installResizeObservers() {
-      var main = document.getElementById('main');
-      if (!main || main.getAttribute('data-resize-observed') === 'true') return;
-      main.setAttribute('data-resize-observed', 'true');
-
-      if (typeof ResizeObserver !== 'undefined') {
-        try {
-          var ro = new ResizeObserver(function() { notifyHeightSoon(); });
-          ro.observe(main);
-          ro.observe(document.body);
-        } catch (e) {}
-      }
-
-      if (typeof MutationObserver !== 'undefined') {
-        try {
-          var mo = new MutationObserver(function() { notifyHeightSoon(); });
-          mo.observe(main, { childList: true, subtree: true, attributes: true });
-        } catch (e) {}
-      }
-
-      window.addEventListener('resize', notifyHeightSoon);
+      // Resize is intentionally event-driven. ResizeObserver/MutationObserver caused a loop
+      // in production because iframe resizing changed the measured body height, which triggered
+      // another resize request. Add/remove/input events call notifyHeightSoon directly.
+      if (window.__cashTransmittalResizeListenerInstalled) return;
+      window.__cashTransmittalResizeListenerInstalled = true;
+      window.addEventListener('resize', function() {
+        notifyHeightSoon();
+      });
     }
 
     function applyWidgetSettings() {
