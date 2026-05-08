@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cash Transmittal Widget - Flat Payload</title>
+  <title>Cash Transmittal Widget - Flat Payload v3</title>
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <style>
     :root {
@@ -11,6 +11,7 @@
       --header: #344054;
       --header-text: #ffffff;
       --bg-alt: #f8fafc;
+      --bg-muted: #f3f4f6;
       --focus: #2d6cdf;
       --good-bg: #d1fae5;
       --good-text: #065f46;
@@ -20,6 +21,7 @@
       --bad-text: #991b1b;
       --info-bg: #e0e7ff;
       --info-text: #3730a3;
+      --muted-text: #667085;
     }
 
     body {
@@ -35,6 +37,7 @@
       flex-direction: column;
       gap: 10px;
       max-width: 1280px;
+      overflow: visible;
     }
 
     .helper-text {
@@ -46,6 +49,7 @@
 
     .table-wrapper {
       overflow-x: auto;
+      overflow-y: visible;
     }
 
     .matrix-table {
@@ -95,26 +99,48 @@
       background-image: none;
     }
 
-    .matrix-table tr:nth-child(odd) {
-      background-color: #ffffff;
-    }
-
-    .matrix-table tr:nth-child(even) {
-      background-color: var(--bg-alt);
-    }
+    .matrix-table tr:nth-child(odd) { background-color: #ffffff; }
+    .matrix-table tr:nth-child(even) { background-color: var(--bg-alt); }
 
     .matrix-table tr.is-empty {
-      opacity: 0.62;
+      opacity: 0.58;
+      background: var(--bg-muted) !important;
+    }
+
+    .matrix-table tr.is-empty input,
+    .matrix-table tr.is-empty select {
+      background: #f9fafb;
+    }
+
+    .row-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #344054;
+      margin-bottom: 3px;
+    }
+
+    .row-hint {
+      display: none;
+      font-size: 11px;
+      color: var(--muted-text);
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    tr.is-empty .row-hint {
+      display: block;
     }
 
     .loan-invalid,
-    .amount-invalid {
+    .amount-invalid,
+    .required-invalid {
       background-color: #fff3cd !important;
       border-color: #f59e0b !important;
     }
 
     .loan-cell {
-      min-width: 380px;
+      min-width: 390px;
     }
 
     .loan-allocations {
@@ -125,42 +151,37 @@
 
     .loan-row {
       display: grid;
-      grid-template-columns: 96px 90px 1fr 28px;
+      grid-template-columns: 100px 92px 1fr 28px;
       align-items: center;
       gap: 4px;
     }
 
+    .loan-row-label {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      font-weight: 700;
+      color: #475467;
+      margin-top: 2px;
+    }
+
     .loan-btn {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
       border-radius: 4px;
       border: none;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       flex-shrink: 0;
     }
 
-    .loan-btn-add {
-      background: #2d6cdf;
-      color: #fff;
-    }
-
-    .loan-btn-add:hover {
-      background: #1e5bc6;
-    }
-
-    .loan-btn-remove {
-      background: #e55353;
-      color: #fff;
-    }
-
-    .loan-btn-remove:hover {
-      background: #d43d3d;
-    }
+    .loan-btn-add { background: #2d6cdf; color: #fff; }
+    .loan-btn-add:hover { background: #1e5bc6; }
+    .loan-btn-remove { background: #e55353; color: #fff; }
+    .loan-btn-remove:hover { background: #d43d3d; }
 
     .row-balance {
       margin-top: 5px;
@@ -177,93 +198,94 @@
       white-space: nowrap;
       text-align: center;
       vertical-align: middle !important;
+      width: 34px;
+      min-width: 34px;
     }
 
     .action-btn {
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
       border-radius: 4px;
       border: none;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin: 2px;
+      margin: 1px;
     }
 
     .action-btn svg {
-      width: 16px;
-      height: 16px;
+      width: 13px;
+      height: 13px;
     }
 
-    .action-btn-copy {
-      background: #3b82f6;
-      color: #fff;
-    }
-
-    .action-btn-copy:hover {
-      background: #2563eb;
-    }
-
-    .action-btn-remove {
-      background: #e55353;
-      color: #fff;
-    }
-
-    .action-btn-remove:hover {
-      background: #d43d3d;
-    }
+    .action-btn-remove { background: #e55353; color: #fff; }
+    .action-btn-remove:hover { background: #d43d3d; }
+    tr.is-empty .action-btn-remove { visibility: hidden; }
 
     .totals {
       display: flex;
       justify-content: flex-end;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
       align-items: center;
+      position: sticky;
+      bottom: 0;
+      z-index: 3;
+      background: rgba(255, 255, 255, 0.96);
+      padding: 6px 0 2px;
     }
 
     .total-field {
-      padding: 8px 14px;
+      padding: 8px 12px;
       border-radius: 4px;
       font-weight: bold;
       font-size: 14px;
     }
 
-    .total-received {
-      background: var(--info-bg);
-      color: var(--info-text);
+    .total-received { background: var(--info-bg); color: var(--info-text); }
+    .total-allocated { background: var(--good-bg); color: var(--good-text); }
+    .total-difference { background: var(--warn-bg); color: var(--warn-text); }
+    .total-difference.balanced { background: var(--good-bg); color: var(--good-text); }
+    .total-difference.over,
+    .total-errors { background: var(--bad-bg); color: var(--bad-text); }
+    .total-ready { background: var(--good-bg); color: var(--good-text); }
+    .total-ready.not-ready { background: var(--bad-bg); color: var(--bad-text); }
+    .hidden { display: none !important; }
+
+    .validation-summary {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      background: #f9fafb;
+      color: #344054;
     }
 
-    .total-allocated {
+    .validation-summary.ready {
       background: var(--good-bg);
       color: var(--good-text);
+      border-color: #86efac;
     }
 
-    .total-difference {
+    .validation-summary.not-ready {
       background: var(--warn-bg);
       color: var(--warn-text);
+      border-color: #fcd34d;
     }
 
-    .total-difference.balanced {
-      background: var(--good-bg);
-      color: var(--good-text);
+    .validation-summary ul {
+      margin: 6px 0 0 18px;
+      padding: 0;
     }
 
-    .total-difference.over,
-    .total-errors {
-      background: var(--bad-bg);
-      color: var(--bad-text);
-    }
-
-    .total-errors.hidden {
-      display: none;
-    }
+    .validation-summary li { margin: 2px 0; }
   </style>
 </head>
 <body>
   <div id="main">
     <div class="helper-text">
-      Enter one payment per row. Add one or more loan applications under that payment. Each payment should balance to zero, and the overall received total should equal the overall applied total.
+      Enter one payment per row. Add one or more loan applications under that payment. Type a double quote (&quot;) in Borrower or Remitter to copy that value from the payment above. Each payment and the overall transmittal must balance before submission.
     </div>
 
     <div class="table-wrapper">
@@ -276,7 +298,7 @@
             <th id="col-amount">Amount Received</th>
             <th id="col-effectiveDate">Effective Date</th>
             <th id="col-loanApplied" class="loan-cell">Loan Applied (Loan # / Amount / Comments)</th>
-            <th>Actions</th>
+            <th>Del</th>
           </tr>
         </thead>
         <tbody id="matrixBody"></tbody>
@@ -288,6 +310,12 @@
       <div class="total-field total-allocated">Total Applied: <span id="totalAllocated">$0.00</span></div>
       <div class="total-field total-difference" id="differenceField">Difference: <span id="totalDifference">$0.00</span></div>
       <div class="total-field total-errors hidden" id="errorField">Issues: <span id="errorCount">0</span></div>
+      <div class="total-field total-ready not-ready" id="readyField">Ready: <span id="readyStatus">No</span></div>
+    </div>
+
+    <div class="validation-summary not-ready" id="validationSummary">
+      Ready to submit: No
+      <ul id="validationList"><li>Enter at least one payment row.</li></ul>
     </div>
   </div>
 
@@ -299,9 +327,14 @@
     var differenceField = document.getElementById('differenceField');
     var errorField = document.getElementById('errorField');
     var errorCountEl = document.getElementById('errorCount');
+    var readyField = document.getElementById('readyField');
+    var readyStatusEl = document.getElementById('readyStatus');
+    var validationSummary = document.getElementById('validationSummary');
+    var validationList = document.getElementById('validationList');
 
     var initialized = false;
     var sendTimer = null;
+    var resizeTimer = null;
     var transmittalId = generateUUID();
 
     var defaultColumnHeaders = {
@@ -390,6 +423,7 @@
         }
         handleInputChange({ target: input });
         sendDataToJotForm();
+        notifyHeightSoon();
       });
       return input;
     }
@@ -409,10 +443,20 @@
       return select;
     }
 
+    function makeLabel(text, className) {
+      var label = document.createElement('span');
+      label.className = className || 'row-label';
+      label.textContent = text;
+      return label;
+    }
+
     function createLoanRow(container, isFirst, loanAppliedId) {
       var loanRow = document.createElement('div');
       loanRow.className = 'loan-row';
       loanRow.setAttribute('data-loan-applied-id', loanAppliedId || generateUUID());
+
+      var loanLabel = makeLabel('Loan application', 'loan-row-label');
+      loanRow.appendChild(loanLabel);
 
       var loanNumInput = createCellInput('text', 'loanNumber', placeholders.loanNumber);
       loanNumInput.addEventListener('input', function() {
@@ -438,22 +482,25 @@
         addBtn.title = 'Add another loan application for this payment';
         addBtn.addEventListener('click', function() {
           createLoanRow(container, false, generateUUID());
+          renumberRows();
           updateTotals();
           sendDataToJotForm();
-          notifyHeight();
+          notifyHeightSoon();
         });
         loanRow.appendChild(addBtn);
       } else {
         var removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'loan-btn loan-btn-remove';
-        removeBtn.textContent = '×';
+        removeBtn.textContent = 'x';
         removeBtn.title = 'Remove this loan application';
+        removeBtn.tabIndex = -1;
         removeBtn.addEventListener('click', function() {
           loanRow.remove();
+          renumberRows();
           updateTotals();
           sendDataToJotForm();
-          notifyHeight();
+          notifyHeightSoon();
         });
         loanRow.appendChild(removeBtn);
       }
@@ -468,7 +515,7 @@
         input.classList.remove('loan-invalid');
         return true;
       }
-      var isValid = /^\d{6,10}$/.test(value);
+      var isValid = /^\d{6,}(?:-\d{2})?$/.test(value);
       input.classList.toggle('loan-invalid', !isValid);
       return isValid;
     }
@@ -480,13 +527,49 @@
       return isValid;
     }
 
+    function validateRequired(input, required) {
+      var valid = !required || String(input.value || '').trim() !== '';
+      input.classList.toggle('required-invalid', !valid);
+      return valid;
+    }
+
+    function getPreviousRowValue(row, inputName) {
+      var rows = Array.prototype.slice.call(matrixBody.querySelectorAll('tr'));
+      var index = rows.indexOf(row);
+      if (index <= 0) return '';
+      for (var i = index - 1; i >= 0; i -= 1) {
+        if (isRowEmpty(rows[i])) continue;
+        var previousInput = rows[i].querySelector('[name="' + inputName + '"]');
+        if (previousInput && previousInput.value.trim() !== '') return previousInput.value.trim();
+      }
+      return '';
+    }
+
+    function maybeCopyFromPrevious(event) {
+      var input = event.target;
+      if (!input || (input.name !== 'borrower' && input.name !== 'remitter')) return false;
+      if (input.value.trim() !== '"') return false;
+      var row = input.closest('tr');
+      var previousValue = getPreviousRowValue(row, input.name);
+      if (previousValue) {
+        input.value = previousValue;
+        return true;
+      }
+      return false;
+    }
+
     function addRow(defaults) {
       var row = document.createElement('tr');
       var transactionId = generateUUID();
       row.setAttribute('data-transaction-id', transactionId);
 
       var borrowerCell = document.createElement('td');
+      borrowerCell.appendChild(makeLabel('Payment'));
       borrowerCell.appendChild(createCellInput('text', 'borrower', placeholders.borrower));
+      var hint = document.createElement('div');
+      hint.className = 'row-hint';
+      hint.textContent = 'Start typing to add another payment.';
+      borrowerCell.appendChild(hint);
       row.appendChild(borrowerCell);
 
       var remitterCell = document.createElement('td');
@@ -522,19 +605,6 @@
       var actionCell = document.createElement('td');
       actionCell.className = 'action-cell';
 
-      var copyBorrowerBtn = document.createElement('button');
-      copyBorrowerBtn.type = 'button';
-      copyBorrowerBtn.className = 'action-btn action-btn-copy';
-      copyBorrowerBtn.title = 'Copy borrower to a new payment row';
-      copyBorrowerBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>';
-      copyBorrowerBtn.addEventListener('click', function() {
-        var borrowerValue = row.querySelector('[name="borrower"]').value;
-        var newRow = addRow({ borrower: borrowerValue });
-        newRow.querySelector('[name="borrower"]').focus();
-        sendDataToJotForm();
-      });
-      actionCell.appendChild(copyBorrowerBtn);
-
       var removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'action-btn action-btn-remove';
@@ -543,13 +613,15 @@
       removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
       removeBtn.addEventListener('click', function() {
         var rows = matrixBody.querySelectorAll('tr');
-        if (rows.length > 1) {
-          row.remove();
-          updateTotals();
-          sendDataToJotForm();
-          notifyHeight();
-          ensureEmptyRow();
-        }
+        if (rows.length <= 1 || isRowEmpty(row)) return;
+        var ok = window.confirm('Remove this payment row and its loan applications?');
+        if (!ok) return;
+        row.remove();
+        ensureEmptyRow();
+        renumberRows();
+        updateTotals();
+        sendDataToJotForm();
+        notifyHeightSoon();
       });
       actionCell.appendChild(removeBtn);
 
@@ -564,8 +636,9 @@
       }
 
       updateRowState(row);
+      renumberRows();
       updateTotals();
-      notifyHeight();
+      notifyHeightSoon();
       return row;
     }
 
@@ -603,15 +676,37 @@
       if (!isRowEmpty(lastRow)) addRow();
     }
 
+    function renumberRows() {
+      var rows = Array.prototype.slice.call(matrixBody.querySelectorAll('tr'));
+      var paymentNumber = 0;
+      rows.forEach(function(row) {
+        var label = row.querySelector('.row-label');
+        if (!isRowEmpty(row)) {
+          paymentNumber += 1;
+          if (label) label.textContent = 'Payment ' + paymentNumber;
+        } else if (label) {
+          label.textContent = 'New payment';
+        }
+        var loanLabels = row.querySelectorAll('.loan-row-label');
+        loanLabels.forEach(function(loanLabel, index) {
+          loanLabel.textContent = 'Loan application ' + (index + 1);
+        });
+      });
+    }
+
     function handleInputChange(event) {
+      if (!event || !event.target) return;
+      maybeCopyFromPrevious(event);
       var row = event.target.closest('tr');
       if (event.target.type === 'number') validateMoneyInput(event.target);
       if (row) {
         updateRowState(row);
         if (!isRowEmpty(row) && isLastRow(row)) addRow();
       }
+      renumberRows();
       updateTotals();
       scheduleSendData();
+      notifyHeightSoon();
     }
 
     function getTransactionAllocationCents(row) {
@@ -622,52 +717,126 @@
       return total;
     }
 
+    function getLoanRowsWithContent(row) {
+      return Array.prototype.filter.call(row.querySelectorAll('.loan-row'), function(loanRow) {
+        var loanNumber = loanRow.querySelector('[name="loanNumber"]').value.trim();
+        var loanAmount = loanRow.querySelector('[name="loanAmount"]').value;
+        var comments = loanRow.querySelector('[name="loanComments"]').value.trim();
+        return loanNumber || loanAmount || comments;
+      });
+    }
+
+    function addIssue(issues, message) {
+      issues.push(message);
+    }
+
+    function updateValidationSummary(issues, readyToSubmit) {
+      validationSummary.classList.toggle('ready', readyToSubmit);
+      validationSummary.classList.toggle('not-ready', !readyToSubmit);
+      readyField.classList.toggle('not-ready', !readyToSubmit);
+      readyStatusEl.textContent = readyToSubmit ? 'Yes' : 'No';
+
+      if (readyToSubmit) {
+        validationSummary.firstChild.nodeValue = 'Ready to submit: Yes';
+        validationList.innerHTML = '<li>All amount and field checks passed.</li>';
+      } else {
+        validationSummary.firstChild.nodeValue = 'Ready to submit: No';
+        validationList.innerHTML = '';
+        issues.slice(0, 8).forEach(function(issue) {
+          var li = document.createElement('li');
+          li.textContent = issue;
+          validationList.appendChild(li);
+        });
+        if (issues.length > 8) {
+          var more = document.createElement('li');
+          more.textContent = 'Additional issues not shown: ' + (issues.length - 8);
+          validationList.appendChild(more);
+        }
+      }
+    }
+
     function updateTotals() {
       var rows = matrixBody.querySelectorAll('tr');
       var receivedCents = 0;
       var allocatedCents = 0;
-      var issueCount = 0;
+      var issues = [];
+      var transactionCount = 0;
+      var loanAppliedCount = 0;
 
       rows.forEach(function(row) {
         if (isRowEmpty(row)) return;
+        transactionCount += 1;
+        var paymentLabel = 'Payment ' + transactionCount;
 
-        var rowReceivedCents = toCents(row.querySelector('[name="amountReceived"]').value);
+        var borrowerInput = row.querySelector('[name="borrower"]');
+        var amountInput = row.querySelector('[name="amountReceived"]');
+        var effectiveDateInput = row.querySelector('[name="effectiveDate"]');
+        var rowReceivedCents = toCents(amountInput.value);
         var rowAllocatedCents = getTransactionAllocationCents(row);
         var rowDifferenceCents = rowReceivedCents - rowAllocatedCents;
         var balanceEl = row.querySelector('.row-balance');
+        var loanRows = getLoanRowsWithContent(row);
 
         receivedCents += rowReceivedCents;
         allocatedCents += rowAllocatedCents;
 
-        row.querySelectorAll('[name="loanNumber"]').forEach(function(input) {
-          if (!validateLoanNumber(input)) issueCount += 1;
+        if (!validateRequired(borrowerInput, true)) addIssue(issues, paymentLabel + ': Borrower Name is required.');
+        if (!validateRequired(amountInput, true) || rowReceivedCents <= 0) addIssue(issues, paymentLabel + ': Amount Received must be greater than zero.');
+        if (!validateRequired(effectiveDateInput, true)) addIssue(issues, paymentLabel + ': Effective Date is required.');
+        if (loanRows.length === 0) addIssue(issues, paymentLabel + ': At least one loan application is required.');
+
+        loanRows.forEach(function(loanRow, loanIndex) {
+          var loanLabel = paymentLabel + ', Loan ' + (loanIndex + 1);
+          var loanNumberInput = loanRow.querySelector('[name="loanNumber"]');
+          var loanAmountInput = loanRow.querySelector('[name="loanAmount"]');
+          var loanAmountCents = toCents(loanAmountInput.value);
+          loanAppliedCount += 1;
+
+          if (!validateRequired(loanNumberInput, true)) {
+            addIssue(issues, loanLabel + ': Loan Number is required.');
+          } else if (!validateLoanNumber(loanNumberInput)) {
+            addIssue(issues, loanLabel + ': Loan Number format is invalid.');
+          }
+          if (!validateRequired(loanAmountInput, true) || loanAmountCents <= 0) {
+            addIssue(issues, loanLabel + ': Amount Applied must be greater than zero.');
+          }
         });
 
         if (balanceEl) {
           balanceEl.classList.remove('balanced', 'remaining', 'over');
           if (rowDifferenceCents === 0) {
             balanceEl.classList.add('balanced');
-            balanceEl.textContent = 'Payment balance: $0.00 ✓';
+            balanceEl.textContent = 'Payment balance: $0.00 OK';
           } else if (rowDifferenceCents < 0) {
             balanceEl.classList.add('over');
             balanceEl.textContent = 'Payment balance: ' + formatCurrency(centsToNumber(Math.abs(rowDifferenceCents))) + ' over';
-            issueCount += 1;
+            addIssue(issues, paymentLabel + ': Loan applications exceed payment by ' + formatCurrency(centsToNumber(Math.abs(rowDifferenceCents))) + '.');
           } else {
             balanceEl.classList.add('remaining');
             balanceEl.textContent = 'Payment balance: ' + formatCurrency(centsToNumber(rowDifferenceCents)) + ' remaining';
-            issueCount += 1;
+            addIssue(issues, paymentLabel + ': Payment has ' + formatCurrency(centsToNumber(rowDifferenceCents)) + ' remaining.');
           }
         }
       });
 
       var differenceCents = receivedCents - allocatedCents;
+      var amountBalanced = differenceCents === 0 && transactionCount > 0 && loanAppliedCount > 0;
+      var validationPassed = issues.length === 0;
+      var readyToSubmit = amountBalanced && validationPassed;
+
+      if (transactionCount === 0) addIssue(issues, 'Enter at least one payment row.');
+      if (transactionCount > 0 && loanAppliedCount === 0) addIssue(issues, 'Enter at least one loan application.');
+      issues = Array.from(new Set(issues));
+      validationPassed = issues.length === 0;
+      readyToSubmit = amountBalanced && validationPassed;
+
       totalReceivedEl.textContent = formatCurrency(centsToNumber(receivedCents));
       totalAllocatedEl.textContent = formatCurrency(centsToNumber(allocatedCents));
 
       differenceField.classList.remove('balanced', 'over');
       if (differenceCents === 0) {
         differenceField.classList.add('balanced');
-        totalDifferenceEl.textContent = '$0.00 ✓';
+        totalDifferenceEl.textContent = '$0.00 OK';
       } else if (differenceCents < 0) {
         differenceField.classList.add('over');
         totalDifferenceEl.textContent = formatCurrency(centsToNumber(Math.abs(differenceCents))) + ' over';
@@ -675,14 +844,21 @@
         totalDifferenceEl.textContent = formatCurrency(centsToNumber(differenceCents)) + ' remaining';
       }
 
-      errorCountEl.textContent = String(issueCount);
-      errorField.classList.toggle('hidden', issueCount === 0);
+      errorCountEl.textContent = String(issues.length);
+      errorField.classList.toggle('hidden', issues.length === 0);
+      updateValidationSummary(issues, readyToSubmit);
 
       return {
         totalReceived: centsToNumber(receivedCents),
         totalApplied: centsToNumber(allocatedCents),
         difference: centsToNumber(differenceCents),
-        issueCount: issueCount
+        amountBalanced: amountBalanced ? 'Yes' : 'No',
+        validationPassed: validationPassed ? 'Yes' : 'No',
+        readyToSubmit: readyToSubmit ? 'Yes' : 'No',
+        issueCount: issues.length,
+        issues: issues,
+        transactionCount: transactionCount,
+        loanAppliedCount: loanAppliedCount
       };
     }
 
@@ -705,15 +881,10 @@
         var effectiveToday = isToday(effectiveDate);
         var transactionAppliedTotal = centsToNumber(getTransactionAllocationCents(row));
         var transactionDifference = centsToNumber(toCents(amountReceived) - toCents(transactionAppliedTotal));
-        var loanRows = Array.prototype.filter.call(row.querySelectorAll('.loan-row'), function(loanRow) {
-          var loanNumber = loanRow.querySelector('[name="loanNumber"]').value.trim();
-          var loanAmount = loanRow.querySelector('[name="loanAmount"]').value;
-          var comments = loanRow.querySelector('[name="loanComments"]').value.trim();
-          return loanNumber || loanAmount || comments;
-        });
+        var loanRows = getLoanRowsWithContent(row);
 
         transactionRows.push({
-          SchemaVersion: '2.0-flat',
+          SchemaVersion: '3.0-flat',
           Transmittal_ID: transmittalId,
           Transaction_ID: transactionId,
           Transaction_RowIndex: txIndex + 1,
@@ -725,6 +896,7 @@
           EffectiveToday: effectiveToday ? 'Yes' : 'No',
           TransactionAppliedTotal: transactionAppliedTotal,
           TransactionDifference: transactionDifference,
+          TransactionAmountBalanced: transactionDifference === 0 ? 'Yes' : 'No',
           LoanAppliedCountForTransaction: loanRows.length
         });
 
@@ -753,10 +925,11 @@
         }
 
         loanRows.forEach(function(loanRow, loanIndex) {
-          var loanNumber = loanRow.querySelector('[name="loanNumber"]').value.trim();
+          var loanNumberInput = loanRow.querySelector('[name="loanNumber"]');
+          var loanNumber = loanNumberInput.value.trim();
           var amountApplied = centsToNumber(toCents(loanRow.querySelector('[name="loanAmount"]').value));
           var loanComments = loanRow.querySelector('[name="loanComments"]').value.trim();
-          var loanNumberValid = loanNumber === '' ? 'Blank' : (validateLoanNumber(loanRow.querySelector('[name="loanNumber"]')) ? 'ValidFormat' : 'InvalidFormat');
+          var loanNumberValid = loanNumber === '' ? 'Blank' : (validateLoanNumber(loanNumberInput) ? 'ValidFormat' : 'InvalidFormat');
 
           flatRows.push(makeFlatRow({
             now: now,
@@ -782,16 +955,19 @@
       });
 
       return {
-        SchemaVersion: '2.0-flat',
+        SchemaVersion: '3.0-flat',
         Transmittal_ID: transmittalId,
         SubmittedAt: now,
         TotalReceived: totals.totalReceived,
         TotalApplied: totals.totalApplied,
         Difference: totals.difference,
+        AmountBalanced: totals.amountBalanced,
+        ValidationPassed: totals.validationPassed,
+        ReadyToSubmit: totals.readyToSubmit,
+        IssueCount: totals.issueCount,
+        Issues: totals.issues,
         TransactionCount: transactionRows.length,
         LoanAppliedCount: flatRows.filter(function(r) { return r.LoanApplied_ID; }).length,
-        IssueCount: totals.issueCount,
-        IsBalanced: totals.difference === 0 && totals.issueCount === 0 ? 'Yes' : 'No',
         Rows: flatRows,
         Transactions: transactionRows
       };
@@ -799,13 +975,15 @@
 
     function makeFlatRow(args) {
       return {
-        SchemaVersion: '2.0-flat',
+        SchemaVersion: '3.0-flat',
         Transmittal_ID: transmittalId,
         SubmittedAt: args.now,
         Transmittal_TotalReceived: args.totals.totalReceived,
         Transmittal_TotalApplied: args.totals.totalApplied,
         Transmittal_Difference: args.totals.difference,
-        Transmittal_IsBalanced: args.totals.difference === 0 && args.totals.issueCount === 0 ? 'Yes' : 'No',
+        Transmittal_AmountBalanced: args.totals.amountBalanced,
+        Transmittal_ValidationPassed: args.totals.validationPassed,
+        Transmittal_ReadyToSubmit: args.totals.readyToSubmit,
         Transaction_ID: args.transactionId,
         Transaction_RowIndex: args.txIndex + 1,
         BorrowerName: args.borrowerName,
@@ -814,6 +992,7 @@
         AmountReceived: args.amountReceived,
         TransactionAppliedTotal: args.transactionAppliedTotal,
         TransactionDifference: args.transactionDifference,
+        TransactionAmountBalanced: args.transactionDifference === 0 ? 'Yes' : 'No',
         EffectiveDate: args.effectiveDate,
         EffectiveToday: args.effectiveToday ? 'Yes' : 'No',
         LoanApplied_ID: args.loanAppliedId,
@@ -834,7 +1013,13 @@
       lines.push('Total Received: ' + formatCurrency(data.TotalReceived));
       lines.push('Total Applied: ' + formatCurrency(data.TotalApplied));
       lines.push('Difference: ' + formatCurrency(data.Difference));
-      lines.push('Balanced: ' + data.IsBalanced);
+      lines.push('Amount Balanced: ' + data.AmountBalanced);
+      lines.push('Validation Passed: ' + data.ValidationPassed);
+      lines.push('Ready To Submit: ' + data.ReadyToSubmit);
+      lines.push('Issues: ' + data.IssueCount);
+      if (data.Issues && data.Issues.length) {
+        data.Issues.forEach(function(issue) { lines.push(' - ' + issue); });
+      }
       lines.push('Transactions: ' + data.TransactionCount);
       lines.push('Loan Applications: ' + data.LoanAppliedCount);
       lines.push('');
@@ -878,6 +1063,11 @@
           flatPayload: data,
           rows: data.Rows,
           transactions: data.Transactions,
+          amountBalanced: data.AmountBalanced,
+          validationPassed: data.ValidationPassed,
+          readyToSubmit: data.ReadyToSubmit,
+          issueCount: data.IssueCount,
+          issues: data.Issues,
           text: generateTextSummary(data)
         })
       };
@@ -893,10 +1083,14 @@
       JFCustomWidget.sendData(getSubmitValue());
     }
 
-    function notifyHeight() {
-      if (typeof JFCustomWidget !== 'undefined') {
-        JFCustomWidget.requestFrameResize();
-      }
+    function notifyHeightSoon() {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        if (typeof JFCustomWidget !== 'undefined') {
+          JFCustomWidget.requestFrameResize();
+          setTimeout(function() { JFCustomWidget.requestFrameResize(); }, 150);
+        }
+      }, 50);
     }
 
     function initializeWidget() {
@@ -904,7 +1098,9 @@
       initialized = true;
       addRow();
       addRow();
-      notifyHeight();
+      renumberRows();
+      updateTotals();
+      notifyHeightSoon();
       sendDataToJotForm();
     }
 
@@ -960,12 +1156,8 @@
 
         JFCustomWidget.subscribe('submit', function() {
           var data = collectData();
-          var hasTransactions = data.TransactionCount > 0;
-          var isBalanced = data.IsBalanced === 'Yes';
-          var hasLoanRows = data.LoanAppliedCount > 0;
-
           JFCustomWidget.sendSubmit({
-            valid: hasTransactions && hasLoanRows && isBalanced,
+            valid: data.ReadyToSubmit === 'Yes',
             value: getSubmitValue().value
           });
         });
