@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cash Transmittal Widget - Flat Payload v3</title>
+  <title>Cash Transmittal Widget - Flat Payload v5</title>
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <style>
     :root {
@@ -24,12 +24,20 @@
       --muted-text: #667085;
     }
 
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: visible !important;
+      min-height: 100%;
+    }
+
     body {
       font-family: Arial, Helvetica, sans-serif;
-      margin: 0;
       padding: 12px;
       color: #1a1a1a;
       background: #ffffff;
+      box-sizing: border-box;
     }
 
     #main {
@@ -56,7 +64,7 @@
       width: 100%;
       border-collapse: collapse;
       border-radius: 8px;
-      overflow: hidden;
+      overflow: visible;
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
     }
 
@@ -118,6 +126,18 @@
       font-weight: 700;
       color: #344054;
       margin-bottom: 3px;
+      min-height: 13px;
+      line-height: 13px;
+    }
+
+    .row-label-spacer {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      min-height: 13px;
+      line-height: 13px;
+      visibility: hidden;
     }
 
     .row-hint {
@@ -450,6 +470,14 @@
       return label;
     }
 
+    function makeSpacerLabel() {
+      var label = document.createElement('span');
+      label.className = 'row-label-spacer';
+      label.setAttribute('aria-hidden', 'true');
+      label.textContent = 'spacer';
+      return label;
+    }
+
     function createLoanRow(container, isFirst, loanAppliedId) {
       var loanRow = document.createElement('div');
       loanRow.className = 'loan-row';
@@ -592,19 +620,23 @@
       row.appendChild(borrowerCell);
 
       var remitterCell = document.createElement('td');
+      remitterCell.appendChild(makeSpacerLabel());
       remitterCell.appendChild(createCellInput('text', 'remitter', placeholders.remitter));
       row.appendChild(remitterCell);
 
       var paymentTypeCell = document.createElement('td');
+      paymentTypeCell.appendChild(makeSpacerLabel());
       paymentTypeCell.appendChild(createSelect('paymentType', paymentTypes));
       row.appendChild(paymentTypeCell);
 
       var amountCell = document.createElement('td');
+      amountCell.appendChild(makeSpacerLabel());
       amountCell.appendChild(createCellInput('number', 'amountReceived', placeholders.amount));
       row.appendChild(amountCell);
 
       var dateCell = document.createElement('td');
       var dateInput = createCellInput('date', 'effectiveDate');
+      dateCell.appendChild(makeSpacerLabel());
       dateInput.value = getTodayDate();
       dateCell.appendChild(dateInput);
       row.appendChild(dateCell);
@@ -1103,14 +1135,45 @@
       JFCustomWidget.sendData(getSubmitValue());
     }
 
+    function getWidgetHeight() {
+      var main = document.getElementById('main');
+      var body = document.body;
+      var html = document.documentElement;
+      var heights = [
+        body.scrollHeight,
+        body.offsetHeight,
+        html ? html.scrollHeight : 0,
+        html ? html.offsetHeight : 0,
+        main ? main.scrollHeight + 24 : 0,
+        main ? main.offsetHeight + 24 : 0
+      ];
+      return Math.max.apply(null, heights.filter(function(h) { return h && h > 0; })) + 10;
+    }
+
+    function requestWidgetResize() {
+      if (typeof JFCustomWidget === 'undefined') return;
+      var height = getWidgetHeight();
+      document.body.style.minHeight = height + 'px';
+
+      try { JFCustomWidget.requestFrameResize({ height: height }); } catch (e) {}
+      try { JFCustomWidget.requestFrameResize(height); } catch (e) {}
+      try { JFCustomWidget.requestFrameResize(); } catch (e) {}
+
+      if (window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({ action: 'setHeight', height: height }, '*');
+          window.parent.postMessage({ type: 'setHeight', height: height }, '*');
+        } catch (e) {}
+      }
+    }
+
     function notifyHeightSoon() {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function() {
-        if (typeof JFCustomWidget !== 'undefined') {
-          JFCustomWidget.requestFrameResize();
-          setTimeout(function() { JFCustomWidget.requestFrameResize(); }, 150);
-        }
-      }, 50);
+        requestWidgetResize();
+        setTimeout(requestWidgetResize, 100);
+        setTimeout(requestWidgetResize, 300);
+      }, 25);
     }
 
     function initializeWidget() {
@@ -1118,10 +1181,34 @@
       initialized = true;
       addRow();
       addRow();
+      installResizeObservers();
       renumberRows();
       updateTotals();
       notifyHeightSoon();
       sendDataToJotForm();
+    }
+
+    function installResizeObservers() {
+      var main = document.getElementById('main');
+      if (!main || main.getAttribute('data-resize-observed') === 'true') return;
+      main.setAttribute('data-resize-observed', 'true');
+
+      if (typeof ResizeObserver !== 'undefined') {
+        try {
+          var ro = new ResizeObserver(function() { notifyHeightSoon(); });
+          ro.observe(main);
+          ro.observe(document.body);
+        } catch (e) {}
+      }
+
+      if (typeof MutationObserver !== 'undefined') {
+        try {
+          var mo = new MutationObserver(function() { notifyHeightSoon(); });
+          mo.observe(main, { childList: true, subtree: true, attributes: true });
+        } catch (e) {}
+      }
+
+      window.addEventListener('resize', notifyHeightSoon);
     }
 
     function applyWidgetSettings() {
