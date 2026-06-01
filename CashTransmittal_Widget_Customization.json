@@ -62,7 +62,7 @@
       "name": "paymentTypeOptions",
       "label": "Payment Type Options (comma-separated)",
       "type": "text",
-      "defaultValue": "Cash,Check,Money Order"
+      "defaultValue": "Check,Cash,Money Order"
     }
   ]
 }
