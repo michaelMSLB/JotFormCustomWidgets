@@ -580,6 +580,26 @@
       return wrapper;
     }
 
+    function setPaymentTypeDefault(select) {
+      if (!select || select.name !== 'paymentType') return false;
+      var defaultOption = Array.prototype.find.call(select.options, function(option) {
+        return normalizePaymentType(option.value) === 'check';
+      });
+      if (!defaultOption) return false;
+      select.value = defaultOption.value;
+      return true;
+    }
+
+    function enforceDefaultPaymentTypeForEmptyRows() {
+      matrixBody.querySelectorAll('tr').forEach(function(row) {
+        if (!isRowEmpty(row)) return;
+        var select = row.querySelector('[name="paymentType"]');
+        if (setPaymentTypeDefault(select)) {
+          handleInputChange({ target: select });
+        }
+      });
+    }
+
     function createSelect(name, options) {
       var select = document.createElement('select');
       select.name = name;
@@ -590,14 +610,7 @@
         option.textContent = opt;
         select.appendChild(option);
       });
-      if (name === 'paymentType') {
-        var defaultOption = Array.prototype.find.call(select.options, function(option) {
-          return normalizePaymentType(option.value) === 'check';
-        });
-        if (defaultOption) {
-          select.value = defaultOption.value;
-        }
-      }
+      if (name === 'paymentType') setPaymentTypeDefault(select);
       select.addEventListener('change', handleInputChange);
       select.addEventListener('blur', sendDataToJotForm);
       return select;
@@ -1554,6 +1567,7 @@
       initialized = true;
       addRow();
       addRow();
+      enforceDefaultPaymentTypeForEmptyRows();
       installResizeObservers();
       renumberRows();
       updateTotals();
@@ -1621,6 +1635,8 @@
       JFCustomWidget.subscribe('ready', function() {
         applyWidgetSettings();
         initializeWidget();
+        setTimeout(enforceDefaultPaymentTypeForEmptyRows, 0);
+        setTimeout(enforceDefaultPaymentTypeForEmptyRows, 250);
 
         JFCustomWidget.subscribe('submit', function() {
           var data = collectData();
