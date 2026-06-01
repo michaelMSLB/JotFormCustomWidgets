@@ -108,6 +108,27 @@
       background-image: none;
     }
 
+    .currency-input-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .currency-input-wrap::before {
+      content: '$';
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-text);
+      font-size: 13px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .currency-input {
+      padding-left: 20px !important;
+    }
+
     .matrix-table tr:nth-child(odd) { background-color: #ffffff; }
     .matrix-table tr:nth-child(even) { background-color: var(--bg-alt); }
 
@@ -548,6 +569,17 @@
       return input;
     }
 
+    function createCurrencyInput(name, placeholder) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'currency-input-wrap';
+
+      var input = createCellInput('number', name, placeholder);
+      input.classList.add('currency-input');
+
+      wrapper.appendChild(input);
+      return wrapper;
+    }
+
     function createSelect(name, options) {
       var select = document.createElement('select');
       select.name = name;
@@ -581,11 +613,12 @@
         sendDataToJotForm();
       });
 
-      var loanAmountInput = createCellInput('number', 'loanAmount', placeholders.loanAmount);
+      var loanAmountInputWrap = createCurrencyInput('loanAmount', placeholders.loanAmount);
+      var loanAmountInput = loanAmountInputWrap.querySelector('input');
       var loanCommentsInput = createCellInput('text', 'loanComments', placeholders.loanComments);
 
       loanRow.appendChild(loanNumInput);
-      loanRow.appendChild(loanAmountInput);
+      loanRow.appendChild(loanAmountInputWrap);
       loanRow.appendChild(loanCommentsInput);
 
       if (isFirst) {
@@ -710,7 +743,7 @@
       row.appendChild(paymentTypeCell);
 
       var amountCell = document.createElement('td');
-      amountCell.appendChild(createCellInput('number', 'amountReceived', placeholders.amount));
+      amountCell.appendChild(createCurrencyInput('amountReceived', placeholders.amount));
       row.appendChild(amountCell);
 
       var dateCell = document.createElement('td');
