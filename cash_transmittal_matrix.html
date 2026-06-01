@@ -590,6 +590,14 @@
         option.textContent = opt;
         select.appendChild(option);
       });
+      if (name === 'paymentType') {
+        var defaultOption = Array.prototype.find.call(select.options, function(option) {
+          return normalizePaymentType(option.value) === 'check';
+        });
+        if (defaultOption) {
+          select.value = defaultOption.value;
+        }
+      }
       select.addEventListener('change', handleInputChange);
       select.addEventListener('blur', sendDataToJotForm);
       return select;
